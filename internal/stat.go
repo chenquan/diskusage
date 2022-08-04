@@ -68,7 +68,7 @@ func Stat(cmd *cobra.Command, _ []string) {
 	unit := getUnit(flags)
 	reduce := getReduce(unit)
 
-	header := fmt.Sprintf("totalSize:%0.3f%s\tdir:%s", float64(totalSize)/float64(reduce), unit, color.GreenString(dir))
+	header := fmt.Sprintf("total size:%0.3f%s\tdir:%s", float64(totalSize)/float64(reduce), unit, color.GreenString(dir))
 	fmt.Println(header)
 	fmt.Println(strings.Repeat("-", len(header)+2))
 

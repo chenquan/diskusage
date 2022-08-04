@@ -41,5 +41,5 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringP("unit", "u", "M", "Displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB)")
 	rootCmd.Flags().String("dir", "./", "Dir path")
-	rootCmd.Flags().IntP("depth", "d", 3, "Shows the depth of the tree directory structure")
+	rootCmd.Flags().IntP("depth", "d", 1, "Shows the depth of the tree directory structure")
 }
