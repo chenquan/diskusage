@@ -16,8 +16,6 @@ package internal
 
 import (
 	"fmt"
-	"log"
-	"math"
 	"os"
 	"path"
 	"strings"
@@ -43,21 +41,28 @@ const (
 	TB    = GB * 1024
 )
 
-func Stat(cmd *cobra.Command, _ []string) {
+func Stat(cmd *cobra.Command, _ []string) error {
 	flags := cmd.Flags()
 	dir, err := flags.GetString("dir")
 	if err != nil {
-		log.Panicln(err)
+		return err
 	}
 
 	depth, err := flags.GetInt("depth")
 	if err != nil {
-		log.Panicln(err)
+		return err
 	}
 
-	files, err := find(dir, math.MaxInt64)
+	unit, err := getUnit(flags)
 	if err != nil {
-		log.Panicln(err)
+		return err
+	}
+
+	reduce := getReduce(unit)
+
+	files, err := find(dir)
+	if err != nil {
+		return err
 	}
 
 	totalSize := int64(0)
@@ -65,41 +70,37 @@ func Stat(cmd *cobra.Command, _ []string) {
 		totalSize += f.size
 	}
 
-	unit := getUnit(flags)
-	reduce := getReduce(unit)
-
 	header := fmt.Sprintf("total size:%0.3f%s\tdir:%s", float64(totalSize)/float64(reduce), unit, color.GreenString(dir))
 	fmt.Println(header)
 	fmt.Println(strings.Repeat("-", len(header)+2))
 
 	printFiles(files, 0, depth, unit)
+	return nil
 }
 
-func getUnit(flags *flag.FlagSet) string {
+func getUnit(flags *flag.FlagSet) (string, error) {
 	unit, err := flags.GetString("unit")
 	if err != nil {
-		log.Panicln(err)
+		return "", err
 	}
+
 	switch unit {
 	case "B":
-		return "Bytes"
+		return "Bytes", nil
 	case "K":
-		return "KB"
+		return "KB", nil
 	case "M":
-		return "MB"
+		return "MB", nil
 	case "G":
-		return "GB"
+		return "GB", nil
 	case "T":
-		return "TB"
+		return "TB", nil
 	}
 
-	return unit
+	return unit, nil
 }
 
-func find(dir string, depth int) ([]file, error) {
-	if depth == 0 {
-		return nil, nil
-	}
+func find(dir string) ([]file, error) {
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -121,7 +122,7 @@ func find(dir string, depth int) ([]file, error) {
 			continue
 		}
 
-		subFiles, err := find(path.Join(dir, entry.Name()), depth-1)
+		subFiles, err := find(path.Join(dir, entry.Name()))
 		if err != nil {
 			return nil, err
 		}

@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	Use:   "diskusage",
 	Short: "show disk usage.",
 	Long:  `show disk usage.`,
-	Run:   internal.Stat,
+	RunE:  internal.Stat,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
