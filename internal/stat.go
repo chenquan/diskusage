@@ -159,7 +159,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		}
 		s := fmt.Sprintf("%stype:%s\tsize:%.3f%s\t%s", bar, typ, float64(f.size)/float64(reduce), unit, color.GreenString(f.name))
 		if f.isDir {
-			colorPrintln(color.YellowString(s))
+			colorPrintln(color.BlueString(s))
 		} else {
 			colorPrintln(s)
 		}
