@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -85,16 +86,9 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 
 	switch unit {
-	case "B":
-		return "Bytes", nil
-	case "K":
-		return "KB", nil
-	case "M":
-		return "MB", nil
-	case "G":
-		return "GB", nil
-	case "T":
-		return "TB", nil
+	case "B", "K", "M", "G", "T":
+	default:
+		return "", errors.New("invalid unit")
 	}
 
 	return unit, nil
@@ -159,7 +153,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		}
 		s := fmt.Sprintf("%stype:%s\tsize:%.3f%s\t%s", bar, typ, float64(f.size)/float64(reduce), unit, color.GreenString(f.name))
 		if f.isDir {
-			colorPrintln(color.YellowString(s))
+			colorPrintln(color.BlueString(s))
 		} else {
 			colorPrintln(s)
 		}
