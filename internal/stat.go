@@ -20,6 +20,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/fatih/color"
 	flag "github.com/spf13/pflag"
@@ -42,6 +43,8 @@ const (
 	TB    = GB * 1024
 )
 
+var errChan = make(chan error)
+
 func Stat(cmd *cobra.Command, _ []string) error {
 	flags := cmd.Flags()
 	dir, err := flags.GetString("dir")
@@ -58,22 +61,32 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+	_ = depth
+	_ = unit
 
-	files, err := find(dir)
+	go func() {
+		files, err := find(dir)
+		if err != nil {
+			errChan <- err
+		}
+
+		totalSize := int64(0)
+		for _, f := range files {
+			totalSize += f.size
+		}
+
+		header := fmt.Sprintf("total size:%s\tdir:%s", getReduce(unit, totalSize), color.GreenString(dir))
+		colorPrintln(header)
+		colorPrintln(strings.Repeat("-", len(header)+2))
+		printFiles(files, 0, depth, unit)
+		errChan <- nil
+	}()
+
+	err = <-errChan
 	if err != nil {
 		return err
 	}
 
-	totalSize := int64(0)
-	for _, f := range files {
-		totalSize += f.size
-	}
-
-	header := fmt.Sprintf("total size:%s\tdir:%s", getReduce(unit, totalSize), color.GreenString(dir))
-	colorPrintln(header)
-	colorPrintln(strings.Repeat("-", len(header)+2))
-
-	printFiles(files, 0, depth, unit)
 	return nil
 }
 
@@ -105,39 +118,50 @@ func find(dir string) ([]file, error) {
 		return nil, err
 	}
 
-	files := make([]file, 0, len(dirEntries))
+	var wg = sync.WaitGroup{}
+	fileChan := make(chan file, len(dirEntries))
 	for _, entry := range dirEntries {
+		entry := entry
+		fileInfo, err := entry.Info()
 		if !entry.IsDir() {
-			fileInfo, err := entry.Info()
 			if err != nil {
 				return nil, err
 			}
-
-			files = append(files, file{
+			fileChan <- file{
 				name:  entry.Name(),
 				isDir: false,
 				size:  fileInfo.Size(),
-			})
+			}
 			continue
 		}
 
-		subFiles, err := find(path.Join(dir, entry.Name()))
-		if err != nil {
-			return nil, err
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			subFiles, err := find(path.Join(dir, entry.Name()))
+			if err != nil {
+				errChan <- err
+			}
 
-		totalSize := int64(0)
-		for _, subFile := range subFiles {
-			totalSize += subFile.size
-		}
+			totalSize := int64(0)
+			for _, subFile := range subFiles {
+				totalSize += subFile.size
+			}
 
-		files = append(files, file{
-			sub:   subFiles,
-			name:  entry.Name(),
-			isDir: true,
-			size:  totalSize,
-		})
+			fileChan <- file{
+				sub:   subFiles,
+				name:  entry.Name(),
+				isDir: true,
+				size:  totalSize,
+			}
+		}()
+	}
+	wg.Wait()
+	close(fileChan)
 
+	files := make([]file, 0, len(dirEntries))
+	for f := range fileChan {
+		files = append(files, f)
 	}
 
 	return files, nil
@@ -156,6 +180,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		if f.isDir {
 			typ = "dir"
 		}
+
 		s := fmt.Sprintf("%stype:%s\tsize:%s\t%s", bar, typ, getReduce(unit, f.size), color.GreenString(f.name))
 		if f.isDir {
 			colorPrintln(color.BlueString(s))
@@ -170,7 +195,7 @@ func printFiles(files []file, n, depth int, unit string) {
 }
 
 var units = []int{Bytes, KB, MB, GB, TB}
-var unitStrings = []string{"Bytes", "KB", "MB", "GB", "TB"}
+var unitStrings = []string{"B", "K", "M", "G", "T"}
 
 func getReduce(unit string, n int64) string {
 	reduce := 0
