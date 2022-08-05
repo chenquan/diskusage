@@ -59,8 +59,6 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	reduce := getReduce(unit)
-
 	files, err := find(dir)
 	if err != nil {
 		return err
@@ -71,7 +69,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		totalSize += f.size
 	}
 
-	header := fmt.Sprintf("total size:%0.3f%s\tdir:%s", float64(totalSize)/float64(reduce), unit, color.GreenString(dir))
+	header := fmt.Sprintf("total size:%s\tdir:%s", getReduce(unit, totalSize), color.GreenString(dir))
 	colorPrintln(header)
 	colorPrintln(strings.Repeat("-", len(header)+2))
 
@@ -150,7 +148,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		return
 	}
 
-	reduce := getReduce(unit)
+	//reduce := getReduce(unit)
 	bar := strings.Repeat("    ", n) + "|---"
 
 	for _, f := range files {
@@ -158,7 +156,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		if f.isDir {
 			typ = "dir"
 		}
-		s := fmt.Sprintf("%stype:%s\tsize:%.3f%s\t%s", bar, typ, float64(f.size)/float64(reduce), unit, color.GreenString(f.name))
+		s := fmt.Sprintf("%stype:%s\tsize:%s\t%s", bar, typ, getReduce(unit, f.size), color.GreenString(f.name))
 		if f.isDir {
 			colorPrintln(color.BlueString(s))
 		} else {
@@ -171,22 +169,37 @@ func printFiles(files []file, n, depth int, unit string) {
 	}
 }
 
-func getReduce(unit string) int {
-	reduce := 1
+var units = []int{Bytes, KB, MB, GB, TB}
+var unitStrings = []string{"Bytes", "KB", "MB", "GB", "TB"}
+
+func getReduce(unit string, n int64) string {
+	reduce := 0
 	switch unit {
 	case "Bytes":
-		reduce = Bytes
+		reduce = 0
 	case "KB":
-		reduce = KB
+		reduce = 1
 	case "MB":
-		reduce = MB
+		reduce = 2
 	case "GB":
-		reduce = GB
+		reduce = 3
 	case "TB":
-		reduce = TB
+		reduce = 4
+	}
+	for {
+		if reduce <= 0 {
+			break
+		}
+
+		if int(float64(n)/float64(units[reduce])*1000) > 0 {
+			break
+		}
+
+		reduce--
+
 	}
 
-	return reduce
+	return fmt.Sprintf("%0.3f%s", float64(n)/float64(units[reduce]), unitStrings[reduce])
 }
 
 func colorPrintln(a ...any) {
