@@ -86,12 +86,19 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 
 	switch unit {
-	case "B", "K", "M", "G", "T":
+	case "B":
+		return "Bytes", nil
+	case "K":
+		return "KB", nil
+	case "M":
+		return "MB", nil
+	case "G":
+		return "GB", nil
+	case "T":
+		return "TB", nil
 	default:
 		return "", errors.New("invalid unit")
 	}
-
-	return unit, nil
 }
 
 func find(dir string) ([]file, error) {
@@ -181,6 +188,7 @@ func getReduce(unit string) int {
 
 	return reduce
 }
+
 func colorPrintln(a ...any) {
 	_, _ = fmt.Fprintln(color.Output, a...)
 }
