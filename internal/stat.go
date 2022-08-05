@@ -71,8 +71,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	}
 
 	header := fmt.Sprintf("total size:%0.3f%s\tdir:%s", float64(totalSize)/float64(reduce), unit, color.GreenString(dir))
-	fmt.Println(header)
-	fmt.Println(strings.Repeat("-", len(header)+2))
+	colorPrintln(header)
+	colorPrintln(strings.Repeat("-", len(header)+2))
 
 	printFiles(files, 0, depth, unit)
 	return nil
@@ -157,12 +157,11 @@ func printFiles(files []file, n, depth int, unit string) {
 		if f.isDir {
 			typ = "dir"
 		}
-
 		s := fmt.Sprintf("%stype:%s\tsize:%.3f%s\t%s", bar, typ, float64(f.size)/float64(reduce), unit, color.GreenString(f.name))
 		if f.isDir {
-			fmt.Println(color.YellowString(s))
+			colorPrintln(color.YellowString(s))
 		} else {
-			fmt.Println(s)
+			colorPrintln(s)
 		}
 
 		if f.isDir {
@@ -187,4 +186,7 @@ func getReduce(unit string) int {
 	}
 
 	return reduce
+}
+func colorPrintln(a ...any) {
+	_, _ = fmt.Fprintln(color.Output, a...)
 }
