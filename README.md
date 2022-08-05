@@ -8,9 +8,11 @@
 go install github.com/chenquan/diskusage@latest
 ```
 
+## use
+
 ```
 $ diskusage -h
-show disk usage.
+A tool for showing disk usage.
 
 Usage:
   diskusage [flags]
@@ -22,6 +24,4 @@ Flags:
   -u, --unit string   Displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
 ```
 
-## use
-
-![](image/windows.png)
+![](image/cmd.png)

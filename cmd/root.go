@@ -24,8 +24,8 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "diskusage",
-	Short: "show disk usage.",
-	Long:  `show disk usage.`,
+	Short: "A tool for showing disk usage.",
+	Long:  `A tool for showing disk usage.`,
 	RunE:  internal.Stat,
 }
 

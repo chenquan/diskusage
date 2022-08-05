@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -85,16 +86,9 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 
 	switch unit {
-	case "B":
-		return "Bytes", nil
-	case "K":
-		return "KB", nil
-	case "M":
-		return "MB", nil
-	case "G":
-		return "GB", nil
-	case "T":
-		return "TB", nil
+	case "B", "K", "M", "G", "T":
+	default:
+		return "", errors.New("invalid unit")
 	}
 
 	return unit, nil
