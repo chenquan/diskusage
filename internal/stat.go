@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -78,8 +79,40 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	types, err := flags.GetStringSlice("type")
+	if err != nil {
+		return err
+	}
+	typeMap := make(map[string]struct{}, len(types))
+	for _, s := range types {
+		typeMap["."+s] = struct{}{}
+	}
+
+	filter, err := flags.GetString("filter")
+	if err != nil {
+		return err
+	}
+	compile, err := regexp.Compile(filter)
+	if err != nil {
+		return err
+	}
+
+	_ = compile
 	go func() {
-		files, err := find(dir)
+		files, err := find(dir, func(info fs.FileInfo) bool {
+			if info.IsDir() {
+				return true
+			}
+
+			name := info.Name()
+			ext := filepath.Ext(name)
+			_, ok := typeMap[ext]
+			typeB := ok || len(types) == 0
+
+			filterB := compile.MatchString(name)
+
+			return typeB && filterB
+		})
 		if err != nil {
 			errChan <- err
 		}
@@ -118,7 +151,7 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 }
 
-func find(dir string) ([]file, error) {
+func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
 		if pathError, ok := err.(*fs.PathError); ok {
@@ -139,6 +172,10 @@ func find(dir string) ([]file, error) {
 			return nil, err
 		}
 
+		if !filter(fileInfo) {
+			continue
+		}
+
 		if !entry.IsDir() {
 			fileChan <- file{
 				name:       entry.Name(),
@@ -152,7 +189,7 @@ func find(dir string) ([]file, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			subFiles, err := find(path.Join(dir, entry.Name()))
+			subFiles, err := find(path.Join(dir, entry.Name()), filter)
 			if err != nil {
 				if accessDenied(err) {
 					return
