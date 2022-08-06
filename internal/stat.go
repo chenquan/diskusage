@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -31,20 +32,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type (
-	file struct {
-		sub   []file
-		name  string
-		isDir bool
-		size  int64
-		fileTimeInfo
-		mode fs.FileMode
-	}
-	fileTimeInfo struct {
-		createTime time.Time
-		modifyTime time.Time
-	}
-)
+type file struct {
+	sub        []file
+	name       string
+	isDir      bool
+	size       int64
+	modifyTime time.Time
+	mode       fs.FileMode
+}
 
 const (
 	Bytes = 1
@@ -57,6 +52,8 @@ const (
 var (
 	errChan           = make(chan error)
 	errorAccessDenied = errors.New("access denied")
+	units             = []int{Bytes, KB, MB, GB, TB}
+	unitStrings       = []string{"B", "K", "M", "G", "T"}
 )
 
 func Stat(cmd *cobra.Command, _ []string) error {
@@ -72,6 +69,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	}
 
 	unit, err := getUnit(flags)
+	if err != nil {
+		return err
+	}
+
+	dir, err = filepath.Abs(dir)
 	if err != nil {
 		return err
 	}
@@ -133,16 +135,16 @@ func find(dir string) ([]file, error) {
 	for _, entry := range dirEntries {
 		entry := entry
 		fileInfo, err := entry.Info()
-		timeInfo := getFileTimeInfo(fileInfo)
+		if err != nil {
+			return nil, err
+		}
+
 		if !entry.IsDir() {
-			if err != nil {
-				return nil, err
-			}
 			fileChan <- file{
-				name:         entry.Name(),
-				size:         fileInfo.Size(),
-				fileTimeInfo: timeInfo,
-				mode:         fileInfo.Mode(),
+				name:       entry.Name(),
+				size:       fileInfo.Size(),
+				modifyTime: fileInfo.ModTime(),
+				mode:       fileInfo.Mode(),
 			}
 			continue
 		}
@@ -164,12 +166,12 @@ func find(dir string) ([]file, error) {
 			}
 
 			fileChan <- file{
-				sub:          subFiles,
-				name:         entry.Name(),
-				isDir:        true,
-				size:         totalSize,
-				fileTimeInfo: timeInfo,
-				mode:         fileInfo.Mode(),
+				sub:        subFiles,
+				name:       entry.Name(),
+				isDir:      true,
+				size:       totalSize,
+				modifyTime: fileInfo.ModTime(),
+				mode:       fileInfo.Mode(),
 			}
 		}()
 	}
@@ -204,9 +206,6 @@ func printFiles(files []file, n, depth int, unit string) {
 		}
 	}
 }
-
-var units = []int{Bytes, KB, MB, GB, TB}
-var unitStrings = []string{"B", "K", "M", "G", "T"}
 
 func getReduce(unit string, n int64) string {
 	reduce := 0
