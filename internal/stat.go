@@ -17,10 +17,12 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fatih/color"
 	flag "github.com/spf13/pflag"
@@ -28,12 +30,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type file struct {
-	sub   []file
-	name  string
-	isDir bool
-	size  int64
-}
+type (
+	file struct {
+		sub   []file
+		name  string
+		isDir bool
+		size  int64
+		fileTimeInfo
+		mode fs.FileMode
+	}
+	fileTimeInfo struct {
+		createTime time.Time
+		modifyTime time.Time
+	}
+)
 
 const (
 	Bytes = 1
@@ -61,8 +71,6 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	_ = depth
-	_ = unit
 
 	go func() {
 		files, err := find(dir)
@@ -97,16 +105,8 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 
 	switch unit {
-	case "B":
-		return "Bytes", nil
-	case "K":
-		return "KB", nil
-	case "M":
-		return "MB", nil
-	case "G":
-		return "GB", nil
-	case "T":
-		return "TB", nil
+	case "B", "K", "M", "G", "T":
+		return unit, err
 	default:
 		return "", errors.New("invalid unit")
 	}
@@ -123,14 +123,17 @@ func find(dir string) ([]file, error) {
 	for _, entry := range dirEntries {
 		entry := entry
 		fileInfo, err := entry.Info()
+		timeInfo := getFileTimeInfo(fileInfo)
 		if !entry.IsDir() {
 			if err != nil {
 				return nil, err
 			}
 			fileChan <- file{
-				name:  entry.Name(),
-				isDir: false,
-				size:  fileInfo.Size(),
+				name:         entry.Name(),
+				isDir:        false,
+				size:         fileInfo.Size(),
+				fileTimeInfo: timeInfo,
+				mode:         fileInfo.Mode(),
 			}
 			continue
 		}
@@ -149,10 +152,12 @@ func find(dir string) ([]file, error) {
 			}
 
 			fileChan <- file{
-				sub:   subFiles,
-				name:  entry.Name(),
-				isDir: true,
-				size:  totalSize,
+				sub:          subFiles,
+				name:         entry.Name(),
+				isDir:        true,
+				size:         totalSize,
+				fileTimeInfo: timeInfo,
+				mode:         fileInfo.Mode(),
 			}
 		}()
 	}
@@ -172,16 +177,9 @@ func printFiles(files []file, n, depth int, unit string) {
 		return
 	}
 
-	//reduce := getReduce(unit)
 	bar := strings.Repeat("    ", n) + "|---"
-
 	for _, f := range files {
-		typ := "file"
-		if f.isDir {
-			typ = "dir"
-		}
-
-		s := fmt.Sprintf("%stype:%s\tsize:%s\t%s", bar, typ, getReduce(unit, f.size), color.GreenString(f.name))
+		s := fmt.Sprintf("%s%s\t%s\t%s\t%s", bar, f.modifyTime.Format("20060102 15:04:05"), f.mode, getReduce(unit, f.size), color.GreenString(f.name))
 		if f.isDir {
 			colorPrintln(color.BlueString(s))
 		} else {
@@ -200,15 +198,15 @@ var unitStrings = []string{"B", "K", "M", "G", "T"}
 func getReduce(unit string, n int64) string {
 	reduce := 0
 	switch unit {
-	case "Bytes":
+	case "B":
 		reduce = 0
-	case "KB":
+	case "K":
 		reduce = 1
-	case "MB":
+	case "M":
 		reduce = 2
-	case "GB":
+	case "G":
 		reduce = 3
-	case "TB":
+	case "T":
 		reduce = 4
 	}
 	for {
