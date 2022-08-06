@@ -15,3 +15,7 @@ func getFileTimeInfo(fi fs.FileInfo) fileTimeInfo {
 		modifyTime: time.Unix(win32FileAttributeData.Mtim.Unix()),
 	}
 }
+
+func accessDeniedSyscall(err error) bool {
+	return false
+}

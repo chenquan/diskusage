@@ -54,7 +54,10 @@ const (
 	TB    = GB * 1024
 )
 
-var errChan = make(chan error)
+var (
+	errChan           = make(chan error)
+	errorAccessDenied = errors.New("access denied")
+)
 
 func Stat(cmd *cobra.Command, _ []string) error {
 	flags := cmd.Flags()
@@ -116,6 +119,12 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 func find(dir string) ([]file, error) {
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
+		if pathError, ok := err.(*fs.PathError); ok {
+			// currently only supports Windows
+			if accessDeniedSyscall(pathError.Err) {
+				return nil, errorAccessDenied
+			}
+		}
 		return nil, err
 	}
 
@@ -143,6 +152,9 @@ func find(dir string) ([]file, error) {
 			defer wg.Done()
 			subFiles, err := find(path.Join(dir, entry.Name()))
 			if err != nil {
+				if accessDenied(err) {
+					return
+				}
 				errChan <- err
 			}
 
@@ -228,4 +240,8 @@ func getReduce(unit string, n int64) string {
 
 func colorPrintln(a ...any) {
 	_, _ = fmt.Fprintln(color.Output, a...)
+}
+
+func accessDenied(err error) bool {
+	return err == errorAccessDenied
 }
