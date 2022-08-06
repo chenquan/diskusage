@@ -15,3 +15,7 @@ func getFileTimeInfo(fi fs.FileInfo) fileTimeInfo {
 		modifyTime: time.Unix(0, win32FileAttributeData.LastWriteTime.Nanoseconds()),
 	}
 }
+
+func accessDeniedSyscall(err error) bool {
+	return syscall.ERROR_ACCESS_DENIED == err
+}

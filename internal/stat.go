@@ -20,6 +20,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -53,7 +54,10 @@ const (
 	TB    = GB * 1024
 )
 
-var errChan = make(chan error)
+var (
+	errChan           = make(chan error)
+	errorAccessDenied = errors.New("access denied")
+)
 
 func Stat(cmd *cobra.Command, _ []string) error {
 	flags := cmd.Flags()
@@ -115,6 +119,12 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 func find(dir string) ([]file, error) {
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
+		if pathError, ok := err.(*fs.PathError); ok {
+			// currently only supports Windows
+			if accessDeniedSyscall(pathError.Err) {
+				return nil, errorAccessDenied
+			}
+		}
 		return nil, err
 	}
 
@@ -142,6 +152,9 @@ func find(dir string) ([]file, error) {
 			defer wg.Done()
 			subFiles, err := find(path.Join(dir, entry.Name()))
 			if err != nil {
+				if accessDenied(err) {
+					return
+				}
 				errChan <- err
 			}
 
@@ -167,6 +180,7 @@ func find(dir string) ([]file, error) {
 	for f := range fileChan {
 		files = append(files, f)
 	}
+	sort.Slice(files, func(i, j int) bool { return files[i].name < files[j].name })
 
 	return files, nil
 }
@@ -176,7 +190,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		return
 	}
 
-	bar := strings.Repeat("    ", n) + "|---"
+	bar := strings.Repeat("   ", n) + "|--"
 	for _, f := range files {
 		s := fmt.Sprintf("%s%s\t%s\t%s\t%s", bar, f.modifyTime.Format("20060102 15:04:05"), f.mode, getReduce(unit, f.size), color.GreenString(f.name))
 		if f.isDir {
@@ -226,4 +240,8 @@ func getReduce(unit string, n int64) string {
 
 func colorPrintln(a ...any) {
 	_, _ = fmt.Fprintln(color.Output, a...)
+}
+
+func accessDenied(err error) bool {
+	return err == errorAccessDenied
 }
