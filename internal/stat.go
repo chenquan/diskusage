@@ -130,7 +130,6 @@ func find(dir string) ([]file, error) {
 			}
 			fileChan <- file{
 				name:         entry.Name(),
-				isDir:        false,
 				size:         fileInfo.Size(),
 				fileTimeInfo: timeInfo,
 				mode:         fileInfo.Mode(),
