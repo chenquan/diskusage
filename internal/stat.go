@@ -234,12 +234,15 @@ func printFiles(files []file, n, depth int, unit string) {
 
 	bar := strings.Repeat("   ", n) + "|--"
 	for _, f := range files {
-		s := fmt.Sprintf("%s%s\t%s\t%s\t%s", bar, f.modifyTime.Format("20060102 15:04:05"), f.mode, getReduce(unit, f.size), color.GreenString(f.name))
+		part1 := fmt.Sprintf("%s%s\t%s\t%s", bar, f.modifyTime.Format("20060102 15:04:05"), f.mode, getReduce(unit, f.size))
+		part2 := color.HiGreenString(f.name)
+		var s string
 		if f.isDir {
-			colorPrintln(color.BlueString(s))
+			s = color.HiBlueString(part1) + "\t" + part2
 		} else {
-			colorPrintln(s)
+			s = part1 + "\t" + part2
 		}
+		colorPrintln(s)
 
 		if f.isDir {
 			printFiles(f.sub, n+1, depth, unit)
