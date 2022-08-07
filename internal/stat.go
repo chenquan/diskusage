@@ -123,7 +123,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 			totalSize += f.size
 		}
 
-		header := fmt.Sprintf("total size:%s\tdir:%s", getReduce(unit, totalSize), color.GreenString(dir))
+		header := fmt.Sprintf("total size:%s\tdir:%s", getReduce(unit, totalSize), color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
 		printFiles(files, 0, depth, unit)
