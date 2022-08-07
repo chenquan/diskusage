@@ -8,7 +8,7 @@
 go install github.com/chenquan/diskusage@latest
 ```
 
-## use
+## how to use
 
 ```
 $ diskusage -h
