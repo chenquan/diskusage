@@ -27,3 +27,7 @@ Flags:
 ```
 
 ![](image/cmd.png)
+
+## example
+1. Only files named Doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
+2. The maximum display unit is G: `diskusage -u G`
