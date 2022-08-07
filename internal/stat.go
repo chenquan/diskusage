@@ -27,6 +27,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chenquan/diskusage/internal/worker"
 	"github.com/fatih/color"
 	flag "github.com/spf13/pflag"
 
@@ -55,6 +56,7 @@ var (
 	errorAccessDenied = errors.New("access denied")
 	units             = []int{Bytes, KB, MB, GB, TB}
 	unitStrings       = []string{"B", "K", "M", "G", "T"}
+	w                 = worker.New(5120)
 )
 
 func Stat(cmd *cobra.Command, _ []string) error {
@@ -97,7 +99,6 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	_ = compile
 	go func() {
 		files, err := find(dir, func(info fs.FileInfo) bool {
 			if info.IsDir() {
@@ -187,8 +188,9 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 		}
 
 		wg.Add(1)
-		go func() {
+		do := func() {
 			defer wg.Done()
+
 			subFiles, err := find(path.Join(dir, entry.Name()), filter)
 			if err != nil {
 				if accessDenied(err) {
@@ -210,7 +212,8 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 				modifyTime: fileInfo.ModTime(),
 				mode:       fileInfo.Mode(),
 			}
-		}()
+		}
+		w.Run(do)
 	}
 	wg.Wait()
 	close(fileChan)
