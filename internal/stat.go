@@ -124,7 +124,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		}
 
 		val, reduceUnit := getReduce(unit, totalSize)
-		header := fmt.Sprintf("Total: %0.2f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
+		header := fmt.Sprintf("Total: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
 		printFiles(files, 0, depth, unit)
@@ -236,7 +236,7 @@ func printFiles(files []file, n, depth int, unit string) {
 	bar := strings.Repeat("   ", n) + "|--"
 	for _, f := range files {
 		val, reduceUnit := getReduce(unit, f.size)
-		part1 := fmt.Sprintf("%s    %s    %9.2f%s", f.modifyTime.Format("20060102 15:04:05"), f.mode, val, reduceUnit)
+		part1 := fmt.Sprintf("%s    %s    %9.3f%s", f.modifyTime.Format("20060102 15:04:05"), f.mode, val, reduceUnit)
 		part2 := color.HiGreenString(f.name)
 		var s = bar
 		if f.isDir {
