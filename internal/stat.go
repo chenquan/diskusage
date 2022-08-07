@@ -232,7 +232,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		return
 	}
 
-	bar := color.HiYellowString(strings.Repeat("   ", n) + "|--")
+	bar := strings.Repeat("   ", n) + "|--"
 	for _, f := range files {
 
 		part1 := fmt.Sprintf("%s\t%s\t%s", f.modifyTime.Format("20060102 15:04:05"), f.mode, getReduce(unit, f.size))
