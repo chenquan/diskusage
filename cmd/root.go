@@ -39,9 +39,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringP("unit", "u", "M", "Displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB)")
-	rootCmd.Flags().String("dir", "./", "Dir path")
-	rootCmd.Flags().IntP("depth", "d", 1, "Shows the depth of the tree directory structure")
-	rootCmd.Flags().StringSliceP("type", "t", []string{}, "Only count certain types of files  (default all)")
-	rootCmd.Flags().StringP("filter", "f", ".", "Make regular expression filter")
+	rootCmd.Flags().StringP("unit", "u", "M", "displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB)")
+	rootCmd.Flags().String("dir", "./", "dir path")
+	rootCmd.Flags().IntP("depth", "d", 1, "shows the depth of the tree directory structure")
+	rootCmd.Flags().StringSliceP("type", "t", []string{}, "only count certain types of files  (default all)")
+	rootCmd.Flags().StringP("filter", "f", ".*", "regular expression filter")
 }
