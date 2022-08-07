@@ -123,7 +123,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 			totalSize += f.size
 		}
 
-		header := fmt.Sprintf("Total: %s\t%s", getReduce(unit, totalSize), color.HiGreenString(dir))
+		val, reduceUnit := getReduce(unit, totalSize)
+		header := fmt.Sprintf("Total: %0.2f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
 		printFiles(files, 0, depth, unit)
@@ -234,8 +235,8 @@ func printFiles(files []file, n, depth int, unit string) {
 
 	bar := strings.Repeat("   ", n) + "|--"
 	for _, f := range files {
-
-		part1 := fmt.Sprintf("%s    %s    %s", f.modifyTime.Format("20060102 15:04:05"), f.mode, getReduce(unit, f.size))
+		val, reduceUnit := getReduce(unit, f.size)
+		part1 := fmt.Sprintf("%s    %s    %9.2f%s", f.modifyTime.Format("20060102 15:04:05"), f.mode, val, reduceUnit)
 		part2 := color.HiGreenString(f.name)
 		var s = bar
 		if f.isDir {
@@ -251,7 +252,7 @@ func printFiles(files []file, n, depth int, unit string) {
 	}
 }
 
-func getReduce(unit string, n int64) string {
+func getReduce(unit string, n int64) (float64, string) {
 	reduce := 0
 	switch unit {
 	case "B":
@@ -278,7 +279,7 @@ func getReduce(unit string, n int64) string {
 
 	}
 
-	return fmt.Sprintf("%9.3f%s", float64(n)/float64(units[reduce]), unitStrings[reduce])
+	return float64(n) / float64(units[reduce]), unitStrings[reduce]
 }
 
 func colorPrintln(a ...any) {
