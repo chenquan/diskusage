@@ -228,7 +228,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	for f := range fileChan {
 		files = append(files, f)
 	}
-	sort.Slice(files, func(i, j int) bool { return files[i].name < files[j].name })
+	sort.Slice(files, func(i, j int) bool { return files[i].size > files[j].size })
 
 	return files, nil
 }
