@@ -99,6 +99,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	all, err := flags.GetBool("all")
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		files, err := find(dir, func(info fs.FileInfo) bool {
 			if info.IsDir() {
@@ -127,7 +132,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		header := fmt.Sprintf("Total: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
-		printFiles(files, 0, depth, unit)
+		printFiles(files, 0, depth, unit, all)
 		errChan <- nil
 	}()
 
@@ -228,13 +233,17 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	return files, nil
 }
 
-func printFiles(files []file, n, depth int, unit string) {
+func printFiles(files []file, n, depth int, unit string, all bool) {
 	if n == depth {
 		return
 	}
 
 	bar := strings.Repeat("   ", n) + "|--"
 	for _, f := range files {
+		if f.isDir && f.size == 0 && !all {
+			continue
+		}
+
 		val, reduceUnit := getReduce(unit, f.size)
 		part1 := fmt.Sprintf("%s    %s    %9.3f%s", f.modifyTime.Format("20060102 15:04:05"), f.mode, val, reduceUnit)
 		part2 := color.HiGreenString(f.name)
@@ -247,7 +256,7 @@ func printFiles(files []file, n, depth int, unit string) {
 		colorPrintln(s)
 
 		if f.isDir {
-			printFiles(f.sub, n+1, depth, unit)
+			printFiles(f.sub, n+1, depth, unit, all)
 		}
 	}
 }

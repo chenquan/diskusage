@@ -18,6 +18,7 @@ Usage:
   diskusage [flags]
 
 Flags:
+  -a, --all             display all directories, otherwise only display folders whose usage size is not 0
   -d, --depth int       shows the depth of the tree directory structure (default 1)
       --dir string      dir path (default "./")
   -f, --filter string   regular expression filter (default ".+")
