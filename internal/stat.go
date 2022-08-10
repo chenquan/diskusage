@@ -23,25 +23,34 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/chenquan/diskusage/internal/worker"
 	"github.com/fatih/color"
+	"github.com/jedib0t/go-pretty/v6/list"
 	flag "github.com/spf13/pflag"
 
 	"github.com/spf13/cobra"
 )
 
-type file struct {
-	sub        []file
-	name       string
-	isDir      bool
-	size       int64
-	modifyTime time.Time
-	mode       fs.FileMode
-}
+type (
+	file struct {
+		sub   []file
+		name  string
+		isDir bool
+		size  int64
+	}
+
+	infoFile struct {
+		size      float64
+		str       string
+		usageRate float64
+		uint      string
+		isDir     bool
+	}
+)
 
 const (
 	Bytes = 1
@@ -132,7 +141,17 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		header := fmt.Sprintf("Total: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
-		printFiles(files, 0, depth, unit, all)
+		l := list.NewWriter()
+		l.SetStyle(list.StyleConnectedLight)
+		infoFiles := printFiles(l, files, 0, depth, unit, totalSize, all)
+		maxLen := 0
+		for _, info := range infoFiles {
+			size := len(info.str)
+			if maxLen < size {
+				maxLen = size
+			}
+		}
+		printTree(l.Render(), infoFiles, maxLen)
 		errChan <- nil
 	}()
 
@@ -185,10 +204,8 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 
 		if !entry.IsDir() {
 			fileChan <- file{
-				name:       entry.Name(),
-				size:       fileInfo.Size(),
-				modifyTime: fileInfo.ModTime(),
-				mode:       fileInfo.Mode(),
+				name: entry.Name(),
+				size: fileInfo.Size(),
 			}
 			continue
 		}
@@ -211,12 +228,10 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 			}
 
 			fileChan <- file{
-				sub:        subFiles,
-				name:       entry.Name(),
-				isDir:      true,
-				size:       totalSize,
-				modifyTime: fileInfo.ModTime(),
-				mode:       fileInfo.Mode(),
+				sub:   subFiles,
+				name:  entry.Name(),
+				isDir: true,
+				size:  totalSize,
 			}
 		}
 		w.Run(do)
@@ -233,32 +248,41 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	return files, nil
 }
 
-func printFiles(files []file, n, depth int, unit string, all bool) {
+func printFiles(l list.Writer, files []file, n, depth int, unit string, totalSize int64, all bool) []infoFile {
 	if n == depth {
-		return
+		return nil
 	}
 
-	bar := strings.Repeat("   ", n) + "|--"
+	var infoFiles []infoFile
 	for _, f := range files {
 		if f.isDir && f.size == 0 && !all {
 			continue
 		}
 
 		val, reduceUnit := getReduce(unit, f.size)
-		part1 := fmt.Sprintf("%s    %s    %9.3f%s", f.modifyTime.Format("20060102 15:04:05"), f.mode, val, reduceUnit)
-		part2 := color.HiGreenString(f.name)
-		var s = bar
+		infoFiles = append(infoFiles, infoFile{
+			size:      val,
+			uint:      reduceUnit,
+			usageRate: float64(f.size) / float64(totalSize) * 100,
+			str:       fmt.Sprintf("%0.1f", val),
+			isDir:     f.isDir,
+		})
+
+		name := f.name
 		if f.isDir {
-			s += color.HiBlueString(part1) + "    " + part2
-		} else {
-			s += part1 + "    " + part2
+			name = color.HiGreenString(name)
 		}
-		colorPrintln(s)
+		l.AppendItem(name)
 
 		if f.isDir {
-			printFiles(f.sub, n+1, depth, unit, all)
+			l.Indent()
+			subUsageSizes := printFiles(l, f.sub, n+1, depth, unit, totalSize, all)
+			infoFiles = append(infoFiles, subUsageSizes...)
+			l.UnIndent()
 		}
 	}
+
+	return infoFiles
 }
 
 func getReduce(unit string, n int64) (float64, string) {
@@ -280,7 +304,7 @@ func getReduce(unit string, n int64) (float64, string) {
 			break
 		}
 
-		if int(float64(n)/float64(units[reduce])*1000) > 0 {
+		if int(float64(n)/float64(units[reduce])*10) > 0 {
 			break
 		}
 
@@ -297,4 +321,19 @@ func colorPrintln(a ...any) {
 
 func accessDenied(err error) bool {
 	return err == errorAccessDenied
+}
+
+func printTree(content string, infoFiles []infoFile, maxLen int) {
+	for i, line := range strings.Split(content, "\n") {
+		info := infoFiles[i]
+
+		str := " %" + strconv.Itoa(maxLen) + ".1f%s %4.1f%%"
+		str = fmt.Sprintf(str, info.size, info.uint, info.usageRate)
+		if info.isDir {
+			str = color.HiRedString(str)
+		}
+
+		colorPrintln(str, line)
+	}
+	colorPrintln()
 }
