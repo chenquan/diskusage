@@ -7,6 +7,7 @@
 ```shell
 go install github.com/chenquan/diskusage@latest
 ```
+or [download](https://github.com/chenquan/diskusage/releases).
 
 ## how to use
 
