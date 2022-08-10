@@ -324,7 +324,12 @@ func accessDenied(err error) bool {
 }
 
 func printTree(content string, infoFiles []infoFile, maxLen int) {
+	size := len(infoFiles)
 	for i, line := range strings.Split(content, "\n") {
+		if i >= size {
+			continue
+		}
+
 		info := infoFiles[i]
 
 		str := " %" + strconv.Itoa(maxLen) + ".1f%s %4.1f%%"
