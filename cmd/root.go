@@ -45,5 +45,5 @@ func init() {
 	rootCmd.Flags().StringSliceP("type", "t", []string{}, "only count certain types of files  (default all)")
 	rootCmd.Flags().StringP("filter", "f", ".+", "regular expression filter")
 	rootCmd.Flags().BoolP("all", "a", false, "display all directories, otherwise only display folders whose usage size is not 0")
-	rootCmd.Flags().StringP("color", "c", "auto", "output color. optional: auto, always, ignore")
+	rootCmd.Flags().StringP("color", "c", "auto", "set color output mode. optional: auto, always, ignore")
 }

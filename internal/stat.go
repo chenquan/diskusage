@@ -184,7 +184,7 @@ func handleColor(flags *flag.FlagSet) error {
 	case "ignore":
 		color.NoColor = true
 	default:
-		return errors.New("invalid unit")
+		return errors.New("invalid color mode")
 	}
 
 	return nil
