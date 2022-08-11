@@ -113,6 +113,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	err = handleColor(flags)
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		files, err := find(dir, func(info fs.FileInfo) bool {
 			if info.IsDir() {
@@ -141,9 +146,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		header := fmt.Sprintf("Total: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
+
 		l := list.NewWriter()
 		l.SetStyle(list.StyleConnectedLight)
-		infoFiles := printFiles(l, files, 0, depth, unit, totalSize, all)
+
+		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, all)
 		maxLen := 0
 		for _, info := range infoFiles {
 			size := len(info.str)
@@ -152,12 +159,32 @@ func Stat(cmd *cobra.Command, _ []string) error {
 			}
 		}
 		printTree(l.Render(), infoFiles, maxLen)
+
 		errChan <- nil
 	}()
 
 	err = <-errChan
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func handleColor(flags *flag.FlagSet) error {
+	colorVal, err := flags.GetString("color")
+	if err != nil {
+		return err
+	}
+
+	switch colorVal {
+	case "auto":
+	case "always":
+		color.NoColor = false
+	case "ignore":
+		color.NoColor = true
+	default:
+		return errors.New("invalid color mode")
 	}
 
 	return nil
@@ -248,7 +275,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	return files, nil
 }
 
-func printFiles(l list.Writer, files []file, n, depth int, unit string, totalSize int64, all bool) []infoFile {
+func buildInfoFile(l list.Writer, files []file, n, depth int, unit string, totalSize int64, all bool) []infoFile {
 	if n == depth {
 		return nil
 	}
@@ -276,7 +303,7 @@ func printFiles(l list.Writer, files []file, n, depth int, unit string, totalSiz
 
 		if f.isDir {
 			l.Indent()
-			subUsageSizes := printFiles(l, f.sub, n+1, depth, unit, totalSize, all)
+			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, all)
 			infoFiles = append(infoFiles, subUsageSizes...)
 			l.UnIndent()
 		}
