@@ -1,15 +1,19 @@
 # diskusage
 
-> A tool for showing disk usage.
+[![Release](https://img.shields.io/github/v/release/chenquan/diskusage.svg?style=flat-square)](https://github.com/chenquan/diskusage)
+[![Download](https://goproxy.cn/stats/github.com/chenquan/diskusage/badges/download-count.svg)](https://github.com/chenquan/diskusage)
+[![GitHub](https://img.shields.io/github/license/chenquan/diskusage)](LICENSE)
 
-## installation
+> A tool for showing disk usage. (Linux, macOS and Windows)🔥
+
+## 💪installation
 
 ```shell
 go install github.com/chenquan/diskusage@latest
 ```
 or [download](https://github.com/chenquan/diskusage/releases).
 
-## how to use
+## 👏how to use
 
 ```
 $ diskusage -h
@@ -31,7 +35,7 @@ Flags:
 
 ![](image/cmd.png)
 
-## example
+## 😎example
 1. Only files named Doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
 2. The maximum display unit is GM: `diskusage -u G`
 3. Supports color output to pipeline: `diskusage -c always | less -R` or `diskusage -c always | more`
