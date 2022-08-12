@@ -205,6 +205,10 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 }
 
 func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
+	if !sysFilter(dir) {
+		return nil, nil
+	}
+
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
 		if pathError, ok := err.(*fs.PathError); ok {

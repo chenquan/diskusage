@@ -2,6 +2,10 @@
 
 package internal
 
-func accessDeniedSyscall(err error) bool {
+func accessDeniedSyscall(_ error) bool {
 	return false
+}
+
+func sysFilter(_ string) bool {
+	return true
 }

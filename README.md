@@ -20,6 +20,7 @@ Usage:
 
 Flags:
   -a, --all             display all directories, otherwise only display folders whose usage size is not 0
+  -c, --color string    set color output mode. optional: auto, always, ignore (default "auto")
   -d, --depth int       shows the depth of the tree directory structure (default 1)
       --dir string      dir path (default "./")
   -f, --filter string   regular expression filter (default ".+")
@@ -33,4 +34,4 @@ Flags:
 ## example
 1. Only files named Doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
 2. The maximum display unit is G: `diskusage -u G`
-3. Supports color output to pipeline: `diskusage -c=always | less -R`
+3. Supports color output to pipeline: `diskusage -c always | less -R`
