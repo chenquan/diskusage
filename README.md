@@ -33,5 +33,8 @@ Flags:
 
 ## example
 1. Only files named Doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
-2. The maximum display unit is G: `diskusage -u G`
-3. Supports color output to pipeline: `diskusage -c always | less -R`
+2. The maximum display unit is GM: `diskusage -u G`
+3. Supports color output to pipeline: `diskusage -c always | less -R` or `diskusage -c always | more`
+
+
+If you like or are using this project to learn or start your solution, please give it a star⭐. Thanks!
