@@ -362,7 +362,7 @@ func printTree(content string, infoFiles []infoFile, maxLen int) {
 
 		info := infoFiles[i]
 
-		format := " %" + strconv.Itoa(maxLen) + ".1f%s %4.1f%%"
+		format := " %" + strconv.Itoa(maxLen) + ".1f%s %5.1f%%"
 		str := fmt.Sprintf(format, info.size, info.uint, info.usageRate)
 		if info.isDir {
 			str = color.HiRedString(str)
