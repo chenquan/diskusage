@@ -1,7 +1,7 @@
 name: Release
 on:
   release:
-    types: [created]
+    types: [ created ]
 jobs:
   releases-matrix:
     name: Release diskusage binary
@@ -10,7 +10,7 @@ jobs:
       matrix:
         # build and publish in parallel: linux/amd64, linux/arm64,
         # windows/amd64, windows/arm64, darwin/amd64, darwin/arm64
-        goos: [ linux, windows, darwin ]
+        goos: [ linux, windows, darwin, freebsd ]
         goarch: [ amd64, arm64 ]
     steps:
       - uses: actions/checkout@v3
