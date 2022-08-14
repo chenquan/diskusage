@@ -153,9 +153,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, all)
 		maxLen := 0
 		for _, info := range infoFiles {
-			size := len(info.str)
-			if maxLen < size {
-				maxLen = size
+			if maxLen < len(info.str) {
+				maxLen = len(info.str)
 			}
 		}
 		printTree(l.Render(), infoFiles, maxLen)
@@ -363,8 +362,8 @@ func printTree(content string, infoFiles []infoFile, maxLen int) {
 
 		info := infoFiles[i]
 
-		str := " %" + strconv.Itoa(maxLen) + ".1f%s %4.1f%%"
-		str = fmt.Sprintf(str, info.size, info.uint, info.usageRate)
+		format := " %" + strconv.Itoa(maxLen) + ".1f%s %4.1f%%"
+		str := fmt.Sprintf(format, info.size, info.uint, info.usageRate)
 		if info.isDir {
 			str = color.HiRedString(str)
 		}
