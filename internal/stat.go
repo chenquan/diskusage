@@ -28,7 +28,6 @@ import (
 	"sync"
 
 	"github.com/chenquan/diskusage/internal/worker"
-	"github.com/chenquan/progress"
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/v6/list"
 	flag "github.com/spf13/pflag"
@@ -120,8 +119,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	}
 
 	go func() {
-		proc := &progress.Process{}
-		files, err := find(dir, proc, func(info fs.FileInfo) bool {
+		files, err := find(dir, func(info fs.FileInfo) bool {
 			if info.IsDir() {
 				return true
 			}
@@ -145,7 +143,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		}
 
 		val, reduceUnit := getReduce(unit, totalSize)
-		header := fmt.Sprintf("\nTotal: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
+		header := fmt.Sprintf("Total: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
 		colorPrintln(strings.Repeat("-", len(header)+2))
 
@@ -160,7 +158,6 @@ func Stat(cmd *cobra.Command, _ []string) error {
 				maxLen = size
 			}
 		}
-
 		printTree(l.Render(), infoFiles, maxLen)
 
 		errChan <- nil
@@ -207,7 +204,7 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 }
 
-func find(dir string, proc *progress.Process, filter func(info fs.FileInfo) bool) ([]file, error) {
+func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	if !sysFilter(dir) {
 		return nil, nil
 	}
@@ -245,14 +242,10 @@ func find(dir string, proc *progress.Process, filter func(info fs.FileInfo) bool
 		}
 
 		wg.Add(1)
-		proc.IncTotal()
 		do := func() {
-			defer func() {
-				proc.IncValue()
-				wg.Done()
-			}()
+			defer wg.Done()
 
-			subFiles, err := find(path.Join(dir, entry.Name()), proc, filter)
+			subFiles, err := find(path.Join(dir, entry.Name()), filter)
 			if err != nil {
 				if accessDenied(err) {
 					return
