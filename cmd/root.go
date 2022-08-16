@@ -15,18 +15,29 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/chenquan/diskusage/internal"
 	"github.com/spf13/cobra"
 )
 
+const BuildVersion = "0.7.3"
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "diskusage",
 	Short: "A tool for showing disk usage.",
-	Long:  `A tool for showing disk usage.`,
-	RunE:  internal.Stat,
+	Long: `A tool for showing disk usage.
+
+GitHub: https://github.com/chenquan/diskusage
+Issue:  https://github.com/chenquan/diskusage/issues
+`,
+	RunE: internal.Stat,
+	Version: fmt.Sprintf(
+		"%s %s/%s %s", BuildVersion,
+		runtime.GOOS, runtime.GOARCH, runtime.Version()),
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
