@@ -119,6 +119,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	}
 
 	go func() {
+		defer close(errChan)
+
 		files, err := find(dir, func(info fs.FileInfo) bool {
 			if info.IsDir() {
 				return true
@@ -135,6 +137,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		})
 		if err != nil {
 			errChan <- err
+			return
 		}
 
 		totalSize := int64(0)
@@ -162,8 +165,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		errChan <- nil
 	}()
 
-	err = <-errChan
-	if err != nil {
+	if <-errChan != nil {
 		return err
 	}
 
@@ -197,7 +199,7 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 
 	switch unit {
 	case "B", "K", "M", "G", "T":
-		return unit, err
+		return unit, nil
 	default:
 		return "", errors.New("invalid unit")
 	}
@@ -355,14 +357,13 @@ func accessDenied(err error) bool {
 
 func printTree(content string, infoFiles []infoFile, maxLen int) {
 	size := len(infoFiles)
+	format := " %" + strconv.Itoa(maxLen) + ".1f%s %5.1f%%"
 	for i, line := range strings.Split(content, "\n") {
 		if i >= size {
 			continue
 		}
 
 		info := infoFiles[i]
-
-		format := " %" + strconv.Itoa(maxLen) + ".1f%s %5.1f%%"
 		str := fmt.Sprintf(format, info.size, info.uint, info.usageRate)
 		if info.isDir {
 			str = color.HiRedString(str)
