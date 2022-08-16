@@ -8,7 +8,7 @@
 
 ![](image/linux-pipe-more.png)
 
-## ❗installation
+## 😜installation
 
 ```shell
 go install github.com/chenquan/diskusage@latest
