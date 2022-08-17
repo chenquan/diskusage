@@ -4,7 +4,7 @@
 [![Download](https://goproxy.cn/stats/github.com/chenquan/diskusage/badges/download-count.svg)](https://github.com/chenquan/diskusage)
 [![GitHub](https://img.shields.io/github/license/chenquan/diskusage)](LICENSE)
 
-🔥A tool for showing disk usage. (Linux, macOS and Windows)🔥
+A tool for showing disk usage. (Linux, macOS and Windows)
 
 ![](image/linux-pipe-more.png)
 
