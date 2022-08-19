@@ -103,7 +103,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	compile, err := regexp.Compile(filter)
+
+	regexpFilter, err := genRegexpFilter(filter)
 	if err != nil {
 		return err
 	}
@@ -131,7 +132,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 			_, ok := typeMap[ext]
 			typeB := ok || len(types) == 0
 
-			filterB := compile.MatchString(name)
+			filterB := regexpFilter(name)
 
 			return typeB && filterB
 		})
@@ -372,4 +373,19 @@ func printTree(content string, infoFiles []infoFile, maxLen int) {
 		colorPrintln(str, line)
 	}
 	colorPrintln()
+}
+
+func genRegexpFilter(filter string) (func(str string) bool, error) {
+	if filter == "" {
+		return func(str string) bool {
+			return true
+		}, nil
+	}
+
+	compile, err := regexp.Compile(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return compile.MatchString, nil
 }
