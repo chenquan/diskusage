@@ -20,7 +20,8 @@ or [download](https://github.com/chenquan/diskusage/releases).
 
 ```
 $ diskusage -h
-A tool for showing disk usage.
+GitHub: https://github.com/chenquan/diskusage
+Issue:  https://github.com/chenquan/diskusage/issues
 
 Usage:
   diskusage [flags]
@@ -34,6 +35,7 @@ Flags:
   -h, --help            help for diskusage
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
+  -v, --version         version for diskusage
 ```
 
 ## 👀example
