@@ -23,7 +23,7 @@ $ diskusage -h
 A tool for showing disk usage.
 
 GitHub: https://github.com/chenquan/diskusage
-Issue:  https://github.com/chenquan/diskusage/issues
+Issues: https://github.com/chenquan/diskusage/issues
 
 Usage:
   diskusage [flags]
