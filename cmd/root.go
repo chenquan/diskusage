@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const BuildVersion = "0.7.3"
+const BuildVersion = "0.7.4"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -32,7 +32,7 @@ var rootCmd = &cobra.Command{
 	Long: `A tool for showing disk usage.
 
 GitHub: https://github.com/chenquan/diskusage
-Issue:  https://github.com/chenquan/diskusage/issues
+Issues: https://github.com/chenquan/diskusage/issues
 `,
 	RunE: internal.Stat,
 	Version: fmt.Sprintf(
