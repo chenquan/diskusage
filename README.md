@@ -20,6 +20,8 @@ or [download](https://github.com/chenquan/diskusage/releases).
 
 ```
 $ diskusage -h
+A tool for showing disk usage.
+
 GitHub: https://github.com/chenquan/diskusage
 Issue:  https://github.com/chenquan/diskusage/issues
 
