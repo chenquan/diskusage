@@ -32,8 +32,7 @@ var rootCmd = &cobra.Command{
 	Long: `A tool for showing disk usage.
 
 GitHub: https://github.com/chenquan/diskusage
-Issues: https://github.com/chenquan/diskusage/issues
-`,
+Issues: https://github.com/chenquan/diskusage/issues`,
 	RunE: internal.Stat,
 	Version: fmt.Sprintf(
 		"%s %s/%s %s", BuildVersion,
