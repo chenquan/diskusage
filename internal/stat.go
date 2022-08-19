@@ -63,7 +63,7 @@ const (
 var (
 	errChan           = make(chan error)
 	errorAccessDenied = errors.New("access denied")
-	units             = []int{Bytes, KB, MB, GB, TB}
+	units             = []int64{Bytes, KB, MB, GB, TB}
 	unitStrings       = []string{"B", "K", "M", "G", "T"}
 	w                 = worker.New(5120)
 )
