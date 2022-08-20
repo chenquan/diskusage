@@ -29,16 +29,16 @@ const BuildVersion = "0.8.1"
 var rootCmd = &cobra.Command{
 	Use:   "diskusage",
 	Short: "A tool for showing disk usage.",
-	Example: `1. The maximum display unit is GB: diskusage -u G 
-2. Only files named Doc or docx are counted:
-  a. diskusage -t doc,docx 
-  b. diskusage -f ".+\.(doc|docx)$"
-3. Supports color output to pipeline: 
-  a. diskusage -c always | less -R 
-  b. diskusage -c always | more
-4. Displays a 2-level tree structure: diskusage -d 2
-5. Specify the directory /usr: diskusage --dir /usr
-6. Export disk usage to file: diskusage > diskusage.txt`,
+	Example: `1.The maximum display unit is GB: diskusage -u G 
+2.Only files named Doc or docx are counted:
+  a.diskusage -t doc,docx 
+  b.diskusage -f ".+\.(doc|docx)$"
+3.Supports color output to pipeline: 
+  a.diskusage -c always | less -R
+  b.diskusage -c always | more
+4.Displays a 2-level tree structure: diskusage -d 2
+5.Specify the directory /usr: diskusage --dir /usr
+6.Export disk usage to file: diskusage > diskusage.txt`,
 	Long: `A tool for showing disk usage.
 
 GitHub: https://github.com/chenquan/diskusage
