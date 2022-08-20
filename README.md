@@ -28,6 +28,18 @@ Issues: https://github.com/chenquan/diskusage/issues
 Usage:
   diskusage [flags]
 
+Examples:
+1.The maximum display unit is GB: diskusage -u G
+2.Only files named Doc or docx are counted:
+  a.diskusage -t doc,docx
+  b.diskusage -f ".+\.(doc|docx)$"
+3.Supports color output to pipeline:
+  a.diskusage -c always | less -R
+  b.diskusage -c always | more
+4.Displays a 2-level tree structure: diskusage -d 2
+5.Specify the directory /usr: diskusage --dir /usr
+6.Export disk usage to file: diskusage > diskusage.txt
+
 Flags:
   -a, --all             display all directories, otherwise only display folders whose usage size is not 0
   -c, --color string    set color output mode. optional: auto, always, ignore (default "auto")
