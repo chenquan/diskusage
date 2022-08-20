@@ -45,7 +45,7 @@ type (
 
 	infoFile struct {
 		size      float64
-		str       string
+		strLen    int
 		usageRate float64
 		uint      string
 		isDir     bool
@@ -65,7 +65,7 @@ var (
 	errorAccessDenied = errors.New("access denied")
 	units             = []int64{Bytes, KB, MB, GB, TB}
 	unitStrings       = []string{"B", "K", "M", "G", "T"}
-	w                 = worker.New(5120)
+	w                 *worker.Worker
 )
 
 func Stat(cmd *cobra.Command, _ []string) error {
@@ -119,6 +119,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	err = setWorker(flags)
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		defer close(errChan)
 
@@ -157,8 +162,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, all)
 		maxLen := 0
 		for _, info := range infoFiles {
-			if maxLen < len(info.str) {
-				maxLen = len(info.str)
+			if maxLen < info.strLen {
+				maxLen = info.strLen
 			}
 		}
 		printTree(l.Render(), infoFiles, maxLen)
@@ -169,6 +174,17 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	if <-errChan != nil {
 		return err
 	}
+
+	return nil
+}
+
+func setWorker(flags *flag.FlagSet) error {
+	workerNum, err := flags.GetInt("worker")
+	if err != nil {
+		return err
+	}
+
+	w = worker.New(workerNum)
 
 	return nil
 }
@@ -297,7 +313,7 @@ func buildInfoFile(l list.Writer, files []file, n, depth int, unit string, total
 			size:      val,
 			uint:      reduceUnit,
 			usageRate: float64(f.size) / float64(totalSize) * 100,
-			str:       fmt.Sprintf("%0.1f", val),
+			strLen:    len(fmt.Sprintf("%0.1f", val)),
 			isDir:     f.isDir,
 		})
 
