@@ -4,22 +4,21 @@
 [![Download](https://goproxy.cn/stats/github.com/chenquan/diskusage/badges/download-count.svg)](https://github.com/chenquan/diskusage)
 [![GitHub](https://img.shields.io/github/license/chenquan/diskusage)](LICENSE)
 
-English | [简体中文](README-CN.md)
+[English](README.md) | 简体中文
 
-
-A tool for showing disk usage. (Linux, macOS and Windows)
+一个显示磁盘使用情况的工具。 （Linux、macOS 和 Windows）
 
 ![](image/linux-pipe-more.png)
 
-## 😜installation
+## 😜安装
 
 ```shell
 go install github.com/chenquan/diskusage@latest
 ```
 
-or [download](https://github.com/chenquan/diskusage/releases).
+或者 [下载](https://github.com/chenquan/diskusage/releases).
 
-## 👏how to use
+## 👏如何使用
 
 ```
 $ diskusage -h
@@ -56,10 +55,10 @@ Flags:
   -w, --worker int      number of workers searching the directory (default 5120)
 ```
 
-## 👀example
+## 👀案例
 
-1. Only files named Doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
-2. The maximum display unit is GB: `diskusage -u G`
-3. Supports color output to pipeline: `diskusage -c always | less -R` or `diskusage -c always | more`
+1. 只统计名为 Doc 或 docx 的文件: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
+2. 最大显示单位GB: `diskusage -u G`
+3. 支持颜色输出到管道: `diskusage -c always | less -R` or `diskusage -c always | more`
 
-If you like or are using this project to learn or start your solution, please give it a star⭐. Thanks!
+如果你喜欢或正在使用这个项目来学习或开始你的解决方案，请给它一个star⭐。谢谢！
