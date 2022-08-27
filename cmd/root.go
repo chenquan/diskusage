@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 	Use:   "diskusage",
 	Short: "A tool for showing disk usage.",
 	Example: `1.The maximum display unit is GB: diskusage -u G 
-2.Only files named Doc or docx are counted:
+2.Only files named doc or docx are counted:
   a.diskusage -t doc,docx 
   b.diskusage -f ".+\.(doc|docx)$"
 3.Supports color output to pipeline: 

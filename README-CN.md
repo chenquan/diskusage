@@ -32,7 +32,7 @@ Usage:
 
 Examples:
 1.The maximum display unit is GB: diskusage -u G
-2.Only files named Doc or docx are counted:
+2.Only files named doc or docx are counted:
   a.diskusage -t doc,docx
   b.diskusage -f ".+\.(doc|docx)$"
 3.Supports color output to pipeline:
@@ -58,7 +58,7 @@ Flags:
 
 ## 👀案例
 
-1. 只统计名为 Doc 或 docx 的文件: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
+1. 只统计名为 doc 或 docx 的文件: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
 2. 最大显示单位GB: `diskusage -u G`
 3. 支持颜色输出到管道: `diskusage -c always | less -R` or `diskusage -c always | more`
 
