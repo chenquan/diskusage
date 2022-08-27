@@ -33,7 +33,7 @@ Usage:
 
 Examples:
 1.The maximum display unit is GB: diskusage -u G
-2.Only files named Doc or docx are counted:
+2.Only files named doc or docx are counted:
   a.diskusage -t doc,docx
   b.diskusage -f ".+\.(doc|docx)$"
 3.Supports color output to pipeline:
@@ -59,7 +59,7 @@ Flags:
 
 ## 👀example
 
-1. Only files named Doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
+1. Only files named doc or docx are counted: `diskusage -t doc,docx` or `diskusage -f ".+\.(doc|docx)$"`
 2. The maximum display unit is GB: `diskusage -u G`
 3. Supports color output to pipeline: `diskusage -c always | less -R` or `diskusage -c always | more`
 
