@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"runtime"
 
@@ -23,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const BuildVersion = "0.8.1"
+const BuildVersion = "0.9.0"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -67,4 +68,5 @@ func init() {
 	rootCmd.Flags().BoolP("all", "a", false, "display all directories, otherwise only display folders whose usage size is not 0")
 	rootCmd.Flags().StringP("color", "c", "auto", "set color output mode. optional: auto, always, ignore")
 	rootCmd.Flags().IntP("worker", "w", 5120, "number of workers searching the directory")
+	rootCmd.Flags().Int64P("limit", "l", math.MaxInt64, "limit the number of files and directories displayed")
 }

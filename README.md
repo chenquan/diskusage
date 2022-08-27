@@ -50,6 +50,7 @@ Flags:
       --dir string      directory path (default "./")
   -f, --filter string   regular expressions are used to filter files
   -h, --help            help for diskusage
+  -l, --limit int       limit the number of files and directories displayed (default 9223372036854775807)
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
   -v, --version         version for diskusage

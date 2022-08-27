@@ -15,6 +15,7 @@
 package internal
 
 import (
+	clist "container/list"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -37,10 +38,11 @@ import (
 
 type (
 	file struct {
-		sub   []file
+		sub   []*file
 		name  string
 		isDir bool
 		size  int64
+		print bool
 	}
 
 	infoFile struct {
@@ -124,6 +126,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	limit, err := flags.GetInt64("limit")
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		defer close(errChan)
 
@@ -159,7 +166,8 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		l := list.NewWriter()
 		l.SetStyle(list.StyleConnectedLight)
 
-		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, all)
+		markPrint(files, limit, all)
+		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize)
 		maxLen := 0
 		for _, info := range infoFiles {
 			if maxLen < info.strLen {
@@ -222,7 +230,7 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	}
 }
 
-func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
+func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 	if !sysFilter(dir) {
 		return nil, nil
 	}
@@ -239,7 +247,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	}
 
 	var wg = sync.WaitGroup{}
-	fileChan := make(chan file, len(dirEntries))
+	fileChan := make(chan *file, len(dirEntries))
 	for _, entry := range dirEntries {
 		entry := entry
 		fileInfo, err := entry.Info()
@@ -252,7 +260,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 		}
 
 		if !entry.IsDir() {
-			fileChan <- file{
+			fileChan <- &file{
 				name: entry.Name(),
 				size: fileInfo.Size(),
 			}
@@ -276,7 +284,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 				totalSize += subFile.size
 			}
 
-			fileChan <- file{
+			fileChan <- &file{
 				sub:   subFiles,
 				name:  entry.Name(),
 				isDir: true,
@@ -288,7 +296,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	wg.Wait()
 	close(fileChan)
 
-	files := make([]file, 0, len(dirEntries))
+	files := make([]*file, 0, len(dirEntries))
 	for f := range fileChan {
 		files = append(files, f)
 	}
@@ -297,14 +305,14 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]file, error) {
 	return files, nil
 }
 
-func buildInfoFile(l list.Writer, files []file, n, depth int, unit string, totalSize int64, all bool) []infoFile {
+func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, totalSize int64) []infoFile {
 	if n == depth {
 		return nil
 	}
 
 	var infoFiles []infoFile
 	for _, f := range files {
-		if f.isDir && f.size == 0 && !all {
+		if !f.print {
 			continue
 		}
 
@@ -325,13 +333,46 @@ func buildInfoFile(l list.Writer, files []file, n, depth int, unit string, total
 
 		if f.isDir {
 			l.Indent()
-			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, all)
+			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize)
 			infoFiles = append(infoFiles, subUsageSizes...)
 			l.UnIndent()
 		}
 	}
 
 	return infoFiles
+}
+
+func markPrint(files []*file, limit int64, all bool) []infoFile {
+
+	cl := clist.New()
+	pushList(cl, files)
+
+	for cl.Len() != 0 {
+		if limit <= 0 {
+			break
+		}
+
+		element := cl.Back()
+		cl.Remove(element)
+
+		f := element.Value.(*file)
+		if f.isDir && f.size == 0 && !all {
+			continue
+		}
+
+		limit--
+		f.print = true
+
+		pushList(cl, f.sub)
+
+	}
+
+	return nil
+}
+func pushList(cl *clist.List, files []*file) {
+	for _, f := range files {
+		cl.PushFront(f)
+	}
 }
 
 func getReduce(unit string, n int64) (float64, string) {
