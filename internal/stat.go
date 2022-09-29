@@ -179,7 +179,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		errChan <- nil
 	}()
 
-	if <-errChan != nil {
+	if err := <-errChan; err != nil {
 		return err
 	}
 
@@ -369,6 +369,7 @@ func markPrint(files []*file, limit int64, all bool) []infoFile {
 
 	return nil
 }
+
 func pushList(cl *clist.List, files []*file) {
 	for _, f := range files {
 		cl.PushFront(f)
@@ -389,6 +390,7 @@ func getReduce(unit string, n int64) (float64, string) {
 	case "T":
 		reduce = 4
 	}
+
 	for {
 		if reduce <= 0 {
 			break
@@ -399,7 +401,6 @@ func getReduce(unit string, n int64) (float64, string) {
 		}
 
 		reduce--
-
 	}
 
 	return float64(n) / float64(units[reduce]), unitStrings[reduce]
