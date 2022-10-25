@@ -343,7 +343,6 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, tota
 }
 
 func markPrint(files []*file, limit int64, all bool) []infoFile {
-
 	cl := clist.New()
 	pushList(cl, files)
 
@@ -364,7 +363,6 @@ func markPrint(files []*file, limit int64, all bool) []infoFile {
 		f.print = true
 
 		pushList(cl, f.sub)
-
 	}
 
 	return nil
