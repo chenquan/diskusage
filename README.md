@@ -1,4 +1,5 @@
 # diskusage
+<a href="https://www.buymeacoffee.com/chenquan"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=chenquan&button_colour=FFDD00&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=ffffff" /></a>
 
 [![Release](https://img.shields.io/github/v/release/chenquan/diskusage.svg?style=flat-square)](https://github.com/chenquan/diskusage)
 [![Download](https://goproxy.cn/stats/github.com/chenquan/diskusage/badges/download-count.svg)](https://github.com/chenquan/diskusage)
