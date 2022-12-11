@@ -36,6 +36,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	Bytes = 1
+	KB    = 1024
+	MB    = KB * 1024
+	GB    = MB * 1024
+	TB    = GB * 1024
+)
+
+var (
+	errChan           = make(chan error)
+	errorAccessDenied = errors.New("access denied")
+	units             = []int64{Bytes, KB, MB, GB, TB}
+	unitStrings       = []string{"B", "K", "M", "G", "T"}
+	w                 *worker.Worker
+)
+
 type (
 	file struct {
 		sub   []*file
@@ -52,22 +68,6 @@ type (
 		uint      string
 		isDir     bool
 	}
-)
-
-const (
-	Bytes = 1
-	KB    = 1024
-	MB    = KB * 1024
-	GB    = MB * 1024
-	TB    = GB * 1024
-)
-
-var (
-	errChan           = make(chan error)
-	errorAccessDenied = errors.New("access denied")
-	units             = []int64{Bytes, KB, MB, GB, TB}
-	unitStrings       = []string{"B", "K", "M", "G", "T"}
-	w                 *worker.Worker
 )
 
 func Stat(cmd *cobra.Command, _ []string) error {
