@@ -67,6 +67,6 @@ func init() {
 	rootCmd.Flags().StringP("filter", "f", "", "regular expressions are used to filter files")
 	rootCmd.Flags().BoolP("all", "a", false, "display all directories, otherwise only display folders whose usage size is not 0")
 	rootCmd.Flags().StringP("color", "c", "auto", "set color output mode. optional: auto, always, ignore")
-	rootCmd.Flags().IntP("worker", "w", 512, "number of workers searching the directory")
+	rootCmd.Flags().IntP("worker", "w", 32, "number of workers searching the directory")
 	rootCmd.Flags().Int64P("limit", "l", math.MaxInt64, "limit the number of files and directories displayed")
 }

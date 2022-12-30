@@ -55,7 +55,7 @@ Flags:
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
   -v, --version         version for diskusage
-  -w, --worker int      number of workers searching the directory (default 512)
+  -w, --worker int      number of workers searching the directory (default 32)
 ```
 
 ## 👀example
