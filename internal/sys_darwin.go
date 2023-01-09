@@ -16,10 +16,6 @@
 
 package internal
 
-func accessDeniedSyscall(_ error) bool {
-	return false
-}
-
-func sysFilter(_ string) bool {
-	return true
+func sysFilter(dir string) bool {
+	return "/dev" != dir
 }

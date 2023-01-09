@@ -45,11 +45,10 @@ const (
 )
 
 var (
-	errChan           = make(chan error)
-	errorAccessDenied = errors.New("access denied")
-	units             = []int64{Bytes, KB, MB, GB, TB}
-	unitStrings       = []string{"B", "K", "M", "G", "T"}
-	w                 *worker.Worker
+	errChan     = make(chan error)
+	units       = []int64{Bytes, KB, MB, GB, TB}
+	unitStrings = []string{"B", "K", "M", "G", "T"}
+	w           *worker.Worker
 )
 
 type (
@@ -237,13 +236,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
-		if pathError, ok := err.(*fs.PathError); ok {
-			// currently only supports Windows
-			if accessDeniedSyscall(pathError.Err) {
-				return nil, errorAccessDenied
-			}
-		}
-		return nil, err
+		return nil, nil
 	}
 
 	var wg = sync.WaitGroup{}
@@ -273,10 +266,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 
 			subFiles, err := find(path.Join(dir, entry.Name()), filter)
 			if err != nil {
-				if accessDenied(err) {
-					return
-				}
-				errChan <- err
+				return
 			}
 
 			totalSize := int64(0)
@@ -406,10 +396,6 @@ func getReduce(unit string, n int64) (float64, string) {
 
 func colorPrintln(a ...any) {
 	_, _ = fmt.Fprintln(color.Output, a...)
-}
-
-func accessDenied(err error) bool {
-	return err == errorAccessDenied
 }
 
 func printTree(content string, infoFiles []infoFile, maxLen int) {
