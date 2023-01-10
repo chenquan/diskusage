@@ -236,6 +236,10 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errors.New("no such directory")
+		}
+
 		return nil, nil
 	}
 
