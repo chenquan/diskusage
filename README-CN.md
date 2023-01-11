@@ -6,7 +6,7 @@
 
 [English](README.md) | 简体中文
 
-一个显示磁盘使用情况的工具。 （Linux、MacOS 和 Windows）
+💥一个显示磁盘使用情况的工具。（Linux、MacOS 和 Windows）
 
 ![](image/linux-pipe-more.png)
 
