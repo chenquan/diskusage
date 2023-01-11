@@ -8,7 +8,7 @@
 English | [简体中文](README-CN.md)
 
 
-A tool for showing disk usage. (Linux, MacOS and Windows)
+💥A tool for showing disk usage. (Linux, MacOS and Windows)
 
 ![](image/linux-pipe-more.png)
 
