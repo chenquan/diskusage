@@ -3,7 +3,7 @@ module github.com/chenquan/diskusage
 go 1.18
 
 require (
-	github.com/fatih/color v1.14.0
+	github.com/fatih/color v1.14.1
 	github.com/jedib0t/go-pretty/v6 v6.4.4
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
