@@ -60,7 +60,7 @@ type (
 		print bool
 	}
 
-	infoFile struct {
+	fileInfo struct {
 		size      float64
 		strLen    int
 		usageRate float64
@@ -130,6 +130,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	recursion, err := flags.GetBool("recursion")
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		defer close(errChan)
 
@@ -166,7 +171,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		l.SetStyle(list.StyleConnectedLight)
 
 		markPrint(files, limit, all)
-		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize)
+		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, recursion)
 		maxLen := 0
 		for _, info := range infoFiles {
 			if maxLen < info.strLen {
@@ -299,19 +304,19 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 	return files, nil
 }
 
-func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, totalSize int64) []infoFile {
-	if n == depth {
+func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, totalSize int64, recursion bool) []fileInfo {
+	if n == depth && !recursion {
 		return nil
 	}
 
-	var infoFiles []infoFile
+	var infoFiles []fileInfo
 	for _, f := range files {
 		if !f.print {
 			continue
 		}
 
 		val, reduceUnit := getReduce(unit, f.size)
-		infoFiles = append(infoFiles, infoFile{
+		infoFiles = append(infoFiles, fileInfo{
 			size:      val,
 			uint:      reduceUnit,
 			usageRate: float64(f.size) / float64(totalSize) * 100,
@@ -327,7 +332,7 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, tota
 
 		if f.isDir {
 			l.Indent()
-			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize)
+			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, recursion)
 			infoFiles = append(infoFiles, subUsageSizes...)
 			l.UnIndent()
 		}
@@ -336,7 +341,8 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, tota
 	return infoFiles
 }
 
-func markPrint(files []*file, limit int64, all bool) []infoFile {
+// markPrint returns fileInfo with print flags.
+func markPrint(files []*file, limit int64, all bool) []fileInfo {
 	cl := clist.New()
 	pushList(cl, files)
 
@@ -402,7 +408,7 @@ func colorPrintln(a ...any) {
 	_, _ = fmt.Fprintln(color.Output, a...)
 }
 
-func printTree(content string, infoFiles []infoFile, maxLen int) {
+func printTree(content string, infoFiles []fileInfo, maxLen int) {
 	size := len(infoFiles)
 	format := " %" + strconv.Itoa(maxLen) + ".1f%s %5.1f%%"
 	for i, line := range strings.Split(content, "\n") {
