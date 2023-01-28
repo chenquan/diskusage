@@ -62,11 +62,12 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringP("unit", "u", "M", "displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB)")
 	rootCmd.Flags().String("dir", "./", "directory path")
-	rootCmd.Flags().IntP("depth", "d", 1, "shows the depth of the tree directory structure")
+	rootCmd.Flags().Int64P("depth", "d", 1, "shows the depth of the tree directory structure")
 	rootCmd.Flags().StringSliceP("type", "t", []string{}, "only count certain types of files  (default all)")
 	rootCmd.Flags().StringP("filter", "f", "", "regular expressions are used to filter files")
 	rootCmd.Flags().BoolP("all", "a", false, "display all directories, otherwise only display folders whose usage size is not 0")
 	rootCmd.Flags().StringP("color", "c", "auto", "set color output mode. optional: auto, always, ignore")
 	rootCmd.Flags().IntP("worker", "w", 32, "number of workers searching the directory")
 	rootCmd.Flags().Int64P("limit", "l", math.MaxInt64, "limit the number of files and directories displayed")
+	rootCmd.Flags().BoolP("recursion", "r", false, "automatically calculate directory depth, for recursively traversing all sub folders")
 }
