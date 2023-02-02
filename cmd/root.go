@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const BuildVersion = "1.0.3"
+const BuildVersion = "1.1.0"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -70,4 +70,5 @@ func init() {
 	rootCmd.Flags().IntP("worker", "w", 32, "number of workers searching the directory")
 	rootCmd.Flags().Int64P("limit", "l", math.MaxInt64, "limit the number of files and directories displayed")
 	rootCmd.Flags().BoolP("recursion", "r", false, "automatically calculate directory depth, for recursively traversing all sub folders")
+	rootCmd.Flags().BoolP("directory", "D", false, "only display directory")
 }
