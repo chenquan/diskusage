@@ -11,6 +11,7 @@ English | [简体中文](README-CN.md)
 💥A tool for showing disk usage. (Linux, MacOS and Windows)
 
 ![](image/linux-pipe-more.png)
+![](image/only-dir.png)
 
 ## 😜installation
 
@@ -49,9 +50,11 @@ Flags:
   -c, --color string    set color output mode. optional: auto, always, ignore (default "auto")
   -d, --depth int       shows the depth of the tree directory structure (default 1)
       --dir string      directory path (default "./")
+  -D, --directory       only display directory
   -f, --filter string   regular expressions are used to filter files
   -h, --help            help for diskusage
   -l, --limit int       limit the number of files and directories displayed (default 9223372036854775807)
+  -r, --recursion       automatically calculate directory depth, for recursively traversing all sub directories
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
   -v, --version         version for diskusage
