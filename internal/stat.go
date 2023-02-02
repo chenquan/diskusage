@@ -76,7 +76,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	depth, err := flags.GetInt("depth")
+	depth, err := flags.GetInt64("depth")
 	if err != nil {
 		return err
 	}
@@ -135,6 +135,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	directory, err := getDirectory(flags)
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		defer close(errChan)
 
@@ -170,7 +175,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		l := list.NewWriter()
 		l.SetStyle(list.StyleConnectedLight)
 
-		markPrint(files, limit, all)
+		markPrint(files, limit, all, directory)
 		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, recursion)
 		maxLen := 0
 		for _, info := range infoFiles {
@@ -230,8 +235,17 @@ func getUnit(flags *flag.FlagSet) (string, error) {
 	case "B", "K", "M", "G", "T":
 		return unit, nil
 	default:
-		return "", errors.New("invalid unit")
+		return "", errors.New("invalid unit:" + unit)
 	}
+}
+
+func getDirectory(flags *flag.FlagSet) (bool, error) {
+	directory, err := flags.GetBool("directory")
+	if err != nil {
+		return false, err
+	}
+
+	return directory, nil
 }
 
 func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
@@ -304,7 +318,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 	return files, nil
 }
 
-func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, totalSize int64, recursion bool) []fileInfo {
+func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, totalSize int64, recursion bool) []fileInfo {
 	if n == depth && !recursion {
 		return nil
 	}
@@ -342,7 +356,7 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int, unit string, tota
 }
 
 // markPrint returns fileInfo with print flags.
-func markPrint(files []*file, limit int64, all bool) []fileInfo {
+func markPrint(files []*file, limit int64, all bool, directory bool) []fileInfo {
 	cl := clist.New()
 	pushList(cl, files)
 
@@ -356,6 +370,11 @@ func markPrint(files []*file, limit int64, all bool) []fileInfo {
 
 		f := element.Value.(*file)
 		if f.isDir && f.size == 0 && !all {
+			continue
+		}
+
+		if !f.isDir && directory {
+			// only display directory.
 			continue
 		}
 
