@@ -307,6 +307,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 		w.Run(do)
 	}
 	wg.Wait()
+	w.Close()
 	close(fileChan)
 
 	files := make([]*file, 0, len(dirEntries))
