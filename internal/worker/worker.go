@@ -14,8 +14,15 @@
 
 package worker
 
+import (
+	"sync"
+	"sync/atomic"
+)
+
 type Worker struct {
-	worker chan struct{}
+	worker    chan struct{}
+	closeOnce sync.Once
+	close     uint32
 }
 
 func New(capacity int) *Worker {
@@ -23,6 +30,11 @@ func New(capacity int) *Worker {
 }
 
 func (w *Worker) Run(run func()) {
+	if atomic.LoadUint32(&w.close) == 1 {
+		run()
+		return
+	}
+
 	select {
 	case w.worker <- struct{}{}:
 		go func() {
@@ -34,4 +46,11 @@ func (w *Worker) Run(run func()) {
 	default:
 		run()
 	}
+}
+
+func (w *Worker) Close() {
+	w.closeOnce.Do(func() {
+		atomic.StoreUint32(&w.close, 1)
+		close(w.worker)
+	})
 }
