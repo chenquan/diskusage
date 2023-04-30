@@ -19,6 +19,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"runtime/debug"
 
 	"github.com/chenquan/diskusage/internal"
 	"github.com/spf13/cobra"
@@ -44,10 +45,27 @@ var rootCmd = &cobra.Command{
 
 GitHub: https://github.com/chenquan/diskusage
 Issues: https://github.com/chenquan/diskusage/issues`,
-	RunE: internal.Stat,
-	Version: fmt.Sprintf(
-		"%s %s/%s %s", BuildVersion,
-		runtime.GOOS, runtime.GOARCH, runtime.Version()),
+	RunE:    internal.Stat,
+	Version: getVersion(),
+}
+
+func getVersion() string {
+	buildVersion := BuildVersion
+
+	buildInfo, ok := debug.ReadBuildInfo()
+	if ok {
+		for _, setting := range buildInfo.Settings {
+			if setting.Key == "vcs.revision" {
+				buildVersion = fmt.Sprintf("%s(%s)", buildVersion, setting.Value)
+				break
+			}
+		}
+	}
+
+	return fmt.Sprintf(
+		"%s %s/%s %s", buildVersion,
+		runtime.GOOS, runtime.GOARCH, runtime.Version())
+
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
