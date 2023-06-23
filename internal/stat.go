@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"bytes"
 	clist "container/list"
 	"errors"
 	"fmt"
@@ -49,6 +50,7 @@ var (
 	units       = []int64{Bytes, KB, MB, GB, TB}
 	unitStrings = []string{"B", "K", "M", "G", "T"}
 	w           *worker.Worker
+	out         = &bytes.Buffer{}
 )
 
 type (
@@ -140,6 +142,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	interactive, err := flags.GetBool("interactive")
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		defer close(errChan)
 
@@ -185,6 +192,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		}
 		printTree(l.Render(), infoFiles, maxLen)
 
+		rendering(interactive, out.String())
 		errChan <- nil
 	}()
 
@@ -425,7 +433,7 @@ func getReduce(unit string, n int64) (float64, string) {
 }
 
 func colorPrintln(a ...any) {
-	_, _ = fmt.Fprintln(color.Output, a...)
+	_, _ = fmt.Fprintln(out, a...)
 }
 
 func printTree(content string, infoFiles []fileInfo, maxLen int) {
