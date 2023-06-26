@@ -177,7 +177,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		val, reduceUnit := getReduce(unit, totalSize)
 		header := fmt.Sprintf("Total: %0.3f%s\t%s", val, reduceUnit, color.HiGreenString(dir))
 		colorPrintln(header)
-		colorPrintln(strings.Repeat("-", len(header)+2))
+		colorPrintln(strings.Repeat("─", len(header)+2))
 
 		l := list.NewWriter()
 		l.SetStyle(list.StyleConnectedLight)
