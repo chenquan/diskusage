@@ -40,7 +40,8 @@ var rootCmd = &cobra.Command{
   b.diskusage -c always | more
 4.Displays a 2-level tree structure: diskusage -d 2
 5.Specify the directory /usr: diskusage --dir /usr
-6.Export disk usage to file: diskusage > diskusage.txt`,
+6.Export disk usage to file: diskusage > diskusage.txt
+7.Enable interactive: diskusage -i`,
 	Long: `A tool for showing disk usage.
 
 GitHub: https://github.com/chenquan/diskusage
@@ -89,5 +90,5 @@ func init() {
 	rootCmd.Flags().Int64P("limit", "l", math.MaxInt64, "limit the number of files and directories displayed")
 	rootCmd.Flags().BoolP("recursion", "r", false, "automatically calculate directory depth, for recursively traversing all sub directories")
 	rootCmd.Flags().BoolP("directory", "D", false, "only display directory")
-	rootCmd.Flags().BoolP("interactive", "i", false, "enable interactive reading")
+	rootCmd.Flags().BoolP("interactive", "i", false, "enable interactive")
 }

@@ -12,6 +12,7 @@ English | [简体中文](README-CN.md)
 
 ![](image/linux-pipe-more.png)
 ![](image/only-dir.png)
+![](image/interactive.png)
 
 ## 😜installation
 

@@ -10,6 +10,7 @@
 
 ![](image/linux-pipe-more.png)
 ![](image/only-dir.png)
+![](image/interactive.png)
 
 ## 😜安装
 
