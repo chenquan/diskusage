@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const BuildVersion = "1.2.5"
+const BuildVersion = "1.2.6"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
