@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/charmbracelet/bubbles v0.19.0
-	github.com/charmbracelet/bubbletea v1.0.0
+	github.com/charmbracelet/bubbletea v1.0.1
 	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/fatih/color v1.17.0
 	github.com/jedib0t/go-pretty/v6 v6.5.9
