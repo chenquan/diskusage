@@ -286,7 +286,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 		if !entry.IsDir() {
 			fileChan <- &file{
 				name: entry.Name(),
-				size: fileInfo.Size(),
+				size: diskSize(fileInfo, filepath.Join(dir, entry.Name())),
 			}
 			continue
 		}

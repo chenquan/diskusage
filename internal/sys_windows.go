@@ -16,6 +16,39 @@
 
 package internal
 
+import (
+	"os"
+	"syscall"
+	"unsafe"
+)
+
+var (
+	modKernel32                = syscall.NewLazyDLL("kernel32.dll")
+	procGetCompressedFileSizeW = modKernel32.NewProc("GetCompressedFileSizeW")
+)
+
 func sysFilter(_ string) bool {
 	return true
+}
+
+// diskSize returns the actual number of bytes allocated on disk for the file
+// via GetCompressedFileSizeW, matching `du`'s default behavior. For sparse or
+// compressed files this excludes unallocated holes, so it is smaller than the
+// apparent logical size returned by os.FileInfo.Size().
+func diskSize(info os.FileInfo, name string) int64 {
+	p, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return info.Size()
+	}
+
+	var high uint32
+	low, _, _ := procGetCompressedFileSizeW.Call(
+		uintptr(unsafe.Pointer(p)),
+		uintptr(unsafe.Pointer(&high)),
+	)
+	if uint32(low) == 0xFFFFFFFF { // INVALID_FILE_SIZE → call failed
+		return info.Size()
+	}
+
+	return int64(uint64(high)<<32 | uint64(uint32(low)))
 }

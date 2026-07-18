@@ -16,6 +16,21 @@
 
 package internal
 
+import (
+	"os"
+	"syscall"
+)
+
 func sysFilter(dir string) bool {
 	return dir != "/proc"
+}
+
+// diskSize returns the actual number of bytes allocated on disk for the file,
+// i.e. allocated blocks (st_blocks * 512), matching `du`'s default behavior.
+// For sparse files this is smaller than the apparent logical size.
+func diskSize(info os.FileInfo, _ string) int64 {
+	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
+		return stat.Blocks * 512 // st_blocks is always in 512-byte units (POSIX)
+	}
+	return info.Size()
 }
