@@ -45,6 +45,10 @@ Examples:
 4.Displays a 2-level tree structure: diskusage -d 2
 5.Specify the directory /usr: diskusage --dir /usr
 6.Export disk usage to file: diskusage > diskusage.txt
+7.Enable interactive: diskusage -i
+8.Exclude directories/files by regex: diskusage -e node_modules -e "\.log$"
+9.Export as JSON: diskusage --json
+10.Sort by name: diskusage --sort name
 
 Flags:
   -a, --all             display all directories, otherwise only display folders whose usage size is not 0
@@ -52,10 +56,15 @@ Flags:
   -d, --depth int       shows the depth of the tree directory structure (default 1)
       --dir string      directory path (default "./")
   -D, --directory       only display directory
+  -e, --exclude strings regular expressions to exclude files and directories from the scan
   -f, --filter string   regular expressions are used to filter files
   -h, --help            help for diskusage
+  -i, --interactive     enable interactive
+      --json            output the result as JSON (sizes in bytes)
   -l, --limit int       limit the number of files and directories displayed (default 9223372036854775807)
+      --progress        show scan progress on stderr (terminal only) (default true)
   -r, --recursion       automatically calculate directory depth, for recursively traversing all sub directories
+      --sort string     sort entries by size (descending) or name (ascending) (default "size")
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
   -v, --version         version for diskusage

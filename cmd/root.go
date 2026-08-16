@@ -84,6 +84,7 @@ func init() {
 	rootCmd.Flags().Int64P("depth", "d", 1, "shows the depth of the tree directory structure")
 	rootCmd.Flags().StringSliceP("type", "t", []string{}, "only count certain types of files  (default all)")
 	rootCmd.Flags().StringP("filter", "f", "", "regular expressions are used to filter files")
+	rootCmd.Flags().StringSliceP("exclude", "e", []string{}, "regular expressions to exclude files and directories from the scan")
 	rootCmd.Flags().BoolP("all", "a", false, "display all directories, otherwise only display folders whose usage size is not 0")
 	rootCmd.Flags().StringP("color", "c", "auto", "set color output mode. optional: auto, always, ignore")
 	rootCmd.Flags().IntP("worker", "w", 32, "number of workers searching the directory")
@@ -91,4 +92,7 @@ func init() {
 	rootCmd.Flags().BoolP("recursion", "r", false, "automatically calculate directory depth, for recursively traversing all sub directories")
 	rootCmd.Flags().BoolP("directory", "D", false, "only display directory")
 	rootCmd.Flags().BoolP("interactive", "i", false, "enable interactive")
+	rootCmd.Flags().Bool("json", false, "output the result as JSON (sizes in bytes)")
+	rootCmd.Flags().String("sort", "size", "sort entries by size (descending) or name (ascending)")
+	rootCmd.Flags().Bool("progress", true, "show scan progress on stderr (terminal only)")
 }
