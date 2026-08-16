@@ -42,12 +42,16 @@ func diskSize(info os.FileInfo, name string) int64 {
 	}
 
 	var high uint32
-	low, _, _ := procGetCompressedFileSizeW.Call(
+	low, _, lastErr := procGetCompressedFileSizeW.Call(
 		uintptr(unsafe.Pointer(p)),
 		uintptr(unsafe.Pointer(&high)),
 	)
-	if uint32(low) == 0xFFFFFFFF { // INVALID_FILE_SIZE → call failed
-		return info.Size()
+	// INVALID_FILE_SIZE signals failure only when GetLastError is non-zero:
+	// 0xFFFFFFFF is also a legitimate low dword of a large file's size.
+	if uint32(low) == 0xFFFFFFFF {
+		if errno, ok := lastErr.(syscall.Errno); !ok || errno != 0 {
+			return info.Size()
+		}
 	}
 
 	return int64(uint64(high)<<32 | uint64(uint32(low)))
