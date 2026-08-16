@@ -17,6 +17,7 @@ package internal
 import (
 	"bytes"
 	clist "container/list"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -51,7 +52,51 @@ var (
 	unitStrings = []string{"B", "K", "M", "G", "T"}
 	w           *worker.Worker
 	out         = &bytes.Buffer{}
+
+	// rootDir marks the scan root, set once by Stat; only a missing root
+	// is a hard error.
+	rootDir string
+
+	// errCollector gathers scan errors (permission denied, etc.) across the
+	// concurrent traversal; only the first maxRecordedErrs are kept.
+	errCollector struct {
+		mu    sync.Mutex
+		errs  []string
+		total int
+	}
+	maxRecordedErrs = 10
 )
+
+func recordErr(path string, err error) {
+	c := &errCollector
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.total++
+	if len(c.errs) < maxRecordedErrs {
+		c.errs = append(c.errs, path+": "+err.Error())
+	}
+}
+
+// errorReport returns a human-readable summary of collected scan errors,
+// or "" when none occurred.
+func errorReport() string {
+	c := &errCollector
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.total == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "diskusage: %d error(s) during scan:", c.total)
+	for _, e := range c.errs {
+		fmt.Fprintf(&b, "\n  %s", e)
+	}
+	if c.total > len(c.errs) {
+		fmt.Fprintf(&b, "\n  ... and %d more", c.total-len(c.errs))
+	}
+	return b.String()
+}
 
 type (
 	file struct {
@@ -92,6 +137,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+	rootDir = dir
 
 	types, err := flags.GetStringSlice("type")
 	if err != nil {
@@ -110,6 +156,19 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	regexpFilter, err := genRegexpFilter(filter)
 	if err != nil {
 		return err
+	}
+
+	excludes, err := flags.GetStringSlice("exclude")
+	if err != nil {
+		return err
+	}
+	excludeFilters := make([]func(string) bool, 0, len(excludes))
+	for _, pattern := range excludes {
+		match, err := genRegexpFilter(pattern)
+		if err != nil {
+			return fmt.Errorf("invalid exclude pattern %q: %w", pattern, err)
+		}
+		excludeFilters = append(excludeFilters, match)
 	}
 
 	all, err := flags.GetBool("all")
@@ -147,23 +206,74 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	jsonOut, err := flags.GetBool("json")
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		interactive = false
+		color.NoColor = true
+	}
+
+	progressEnabled, err := flags.GetBool("progress")
+	if err != nil {
+		return err
+	}
+	initProgress(progressEnabled && stderrIsTerminal())
+
+	sortBy, err := flags.GetString("sort")
+	if err != nil {
+		return err
+	}
+	var sortFunc func(a []*file, i, j int) bool
+	switch sortBy {
+	case "size":
+		sortFunc = func(a []*file, i, j int) bool { return a[i].size > a[j].size }
+	case "name":
+		sortFunc = func(a []*file, i, j int) bool { return a[i].name < a[j].name }
+	default:
+		return fmt.Errorf("invalid sort: %q, optional: size, name", sortBy)
+	}
+
+	filterFunc := func(info fs.FileInfo) bool {
+		name := info.Name()
+		for _, exclude := range excludeFilters {
+			if exclude(name) {
+				return false
+			}
+		}
+
+		if info.IsDir() {
+			return true
+		}
+
+		ext := filepath.Ext(name)
+		_, ok := typeMap[ext]
+		typeB := ok || len(types) == 0
+
+		filterB := regexpFilter(name)
+
+		return typeB && filterB
+	}
+
 	go func() {
 		defer close(errChan)
 
-		files, err := find(dir, func(info fs.FileInfo) bool {
-			if info.IsDir() {
-				return true
+		if jsonOut {
+			if err := statJSON(dir, filterFunc, sortFunc, limit, all, directory, depth, recursion); err != nil {
+				errChan <- err
+				return
 			}
+			if report := errorReport(); report != "" {
+				fmt.Fprintln(os.Stderr, report)
+			}
+			errChan <- nil
+			return
+		}
 
-			name := info.Name()
-			ext := filepath.Ext(name)
-			_, ok := typeMap[ext]
-			typeB := ok || len(types) == 0
-
-			filterB := regexpFilter(name)
-
-			return typeB && filterB
-		})
+		files, err := find(dir, filterFunc, sortFunc)
+		w.Close()
+		finishProgress()
 		if err != nil {
 			errChan <- err
 			return
@@ -192,6 +302,15 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		}
 		printTree(l.Render(), infoFiles, maxLen)
 
+		if report := errorReport(); report != "" {
+			if interactive {
+				out.WriteString(report + "\n")
+			} else {
+				// stderr, so stdout stays clean for redirection
+				fmt.Fprintln(os.Stderr, report)
+			}
+		}
+
 		rendering(interactive, out.String())
 		errChan <- nil
 	}()
@@ -201,6 +320,69 @@ func Stat(cmd *cobra.Command, _ []string) error {
 	}
 
 	return nil
+}
+
+type jsonNode struct {
+	Name      string     `json:"name"`
+	IsDir     bool       `json:"is_dir"`
+	Size      int64      `json:"size"`
+	UsageRate float64    `json:"usage_rate"`
+	Children  []jsonNode `json:"children,omitempty"`
+}
+
+// statJSON scans dir and writes the same view as the tree output (respecting
+// limit/all/directory/depth/recursion and the scan filter) as JSON with byte
+// sizes, so stdout stays machine-parseable.
+func statJSON(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*file, i, j int) bool, limit int64, all, directory bool, depth int64, recursion bool) error {
+	files, err := find(dir, filter, sortFunc)
+	w.Close()
+	finishProgress()
+	if err != nil {
+		return err
+	}
+
+	totalSize := int64(0)
+	for _, f := range files {
+		totalSize += f.size
+	}
+
+	markPrint(files, limit, all, directory)
+
+	var build func(files []*file, n int64) []jsonNode
+	build = func(files []*file, n int64) []jsonNode {
+		if n == depth && !recursion {
+			return nil
+		}
+
+		var nodes []jsonNode
+		for _, f := range files {
+			if !f.print {
+				continue
+			}
+
+			var rate float64
+			if totalSize != 0 {
+				rate = float64(f.size) / float64(totalSize) * 100
+			}
+			nodes = append(nodes, jsonNode{
+				Name:      f.name,
+				IsDir:     f.isDir,
+				Size:      f.size,
+				UsageRate: rate,
+				Children:  build(f.sub, n+1),
+			})
+		}
+		return nodes
+	}
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(jsonNode{
+		Name:     dir,
+		IsDir:    true,
+		Size:     totalSize,
+		Children: build(files, 0),
+	})
 }
 
 func setWorker(flags *flag.FlagSet) error {
@@ -256,27 +438,33 @@ func getDirectory(flags *flag.FlagSet) (bool, error) {
 	return directory, nil
 }
 
-func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
+// find walks dir recursively. Only a missing root directory is a hard error;
+// errors below the root are recorded via recordErr and the subtree is skipped.
+// sortFunc orders every level's entries.
+func find(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*file, i, j int) bool) ([]*file, error) {
 	if !sysFilter(dir) {
 		return nil, nil
 	}
 
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) && dir == rootDir {
 			return nil, errors.New("no such directory")
 		}
 
+		// permission denied, vanished mid-scan, etc.: record and skip
+		recordErr(dir, err)
 		return nil, nil
 	}
+	tickDir()
 
 	var wg = sync.WaitGroup{}
 	fileChan := make(chan *file, len(dirEntries))
 	for _, entry := range dirEntries {
-		entry := entry
 		fileInfo, err := entry.Info()
 		if err != nil {
-			return nil, err
+			// the entry vanished between ReadDir and Info; skip it
+			continue
 		}
 
 		if !filter(fileInfo) {
@@ -284,6 +472,7 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 		}
 
 		if !entry.IsDir() {
+			tickFile()
 			fileChan <- &file{
 				name: entry.Name(),
 				size: diskSize(fileInfo, filepath.Join(dir, entry.Name())),
@@ -295,8 +484,9 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 		do := func() {
 			defer wg.Done()
 
-			subFiles, err := find(path.Join(dir, entry.Name()), filter)
+			subFiles, err := find(path.Join(dir, entry.Name()), filter, sortFunc)
 			if err != nil {
+				recordErr(path.Join(dir, entry.Name()), err)
 				return
 			}
 
@@ -315,14 +505,13 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 		w.Run(do)
 	}
 	wg.Wait()
-	w.Close()
 	close(fileChan)
 
 	files := make([]*file, 0, len(dirEntries))
 	for f := range fileChan {
 		files = append(files, f)
 	}
-	sort.Slice(files, func(i, j int) bool { return files[i].size > files[j].size })
+	sort.Slice(files, func(i, j int) bool { return sortFunc(files, i, j) })
 
 	return files, nil
 }
@@ -339,10 +528,14 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, to
 		}
 
 		val, reduceUnit := getReduce(unit, f.size)
+		var usageRate float64
+		if totalSize != 0 {
+			usageRate = float64(f.size) / float64(totalSize) * 100
+		}
 		infoFiles = append(infoFiles, fileInfo{
 			size:      val,
 			uint:      reduceUnit,
-			usageRate: float64(f.size) / float64(totalSize) * 100,
+			usageRate: usageRate,
 			strLen:    len(fmt.Sprintf("%0.1f", val)),
 			isDir:     f.isDir,
 		})
