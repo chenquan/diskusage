@@ -64,6 +64,7 @@ Flags:
   -l, --limit int       limit the number of files and directories displayed (default 9223372036854775807)
       --progress        show scan progress on stderr (terminal only) (default true)
   -r, --recursion       automatically calculate directory depth, for recursively traversing all sub directories
+  -R, --reverse         reverse the sort order (with --sort size, smallest files first)
       --sort string     sort entries by size (descending) or name (ascending) (default "size")
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")

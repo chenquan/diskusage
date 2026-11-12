@@ -94,5 +94,6 @@ func init() {
 	rootCmd.Flags().BoolP("interactive", "i", false, "enable interactive")
 	rootCmd.Flags().Bool("json", false, "output the result as JSON (sizes in bytes)")
 	rootCmd.Flags().String("sort", "size", "sort entries by size (descending) or name (ascending)")
+	rootCmd.Flags().BoolP("reverse", "R", false, "reverse the sort order (with --sort size, smallest files first)")
 	rootCmd.Flags().Bool("progress", true, "show scan progress on stderr (terminal only)")
 }

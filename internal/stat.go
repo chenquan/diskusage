@@ -217,6 +217,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	reverse, err := flags.GetBool("reverse")
+	if err != nil {
+		return err
+	}
+
 	jsonOut, err := flags.GetBool("json")
 	if err != nil {
 		return err
@@ -271,7 +276,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		defer close(errChan)
 
 		if jsonOut {
-			if err := statJSON(dir, filterFunc, sortFunc, limit, all, directory, depth, recursion); err != nil {
+			if err := statJSON(dir, filterFunc, sortFunc, limit, all, directory, depth, recursion, reverse); err != nil {
 				errChan <- err
 				return
 			}
@@ -304,7 +309,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		l.SetStyle(list.StyleConnectedLight)
 
 		markPrint(files, limit, all, directory)
-		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, recursion)
+		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, recursion, reverse)
 		maxLen := 0
 		for _, info := range infoFiles {
 			if maxLen < info.strLen {
@@ -344,7 +349,7 @@ type jsonNode struct {
 // statJSON scans dir and writes the same view as the tree output (respecting
 // limit/all/directory/depth/recursion and the scan filter) as JSON with byte
 // sizes, so stdout stays machine-parseable.
-func statJSON(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*file, i, j int) bool, limit int64, all, directory bool, depth int64, recursion bool) error {
+func statJSON(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*file, i, j int) bool, limit int64, all, directory bool, depth int64, recursion, reverse bool) error {
 	files, err := find(dir, filter, sortFunc)
 	w.Close()
 	finishProgress()
@@ -366,7 +371,12 @@ func statJSON(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []
 		}
 
 		var nodes []jsonNode
-		for _, f := range files {
+		for i := range files {
+			f := files[i]
+			if reverse {
+				f = files[len(files)-1-i]
+			}
+
 			if !f.print {
 				continue
 			}
@@ -593,13 +603,18 @@ func finalizeTree(files []*file, sortFunc func(a []*file, i, j int) bool) int64 
 	return totalSize
 }
 
-func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, totalSize int64, recursion bool) []fileInfo {
+func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, totalSize int64, recursion, reverse bool) []fileInfo {
 	if n == depth && !recursion {
 		return nil
 	}
 
 	var infoFiles []fileInfo
-	for _, f := range files {
+	for i := range files {
+		f := files[i]
+		if reverse {
+			f = files[len(files)-1-i]
+		}
+
 		if !f.print {
 			continue
 		}
@@ -625,7 +640,7 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, to
 
 		if f.isDir {
 			l.Indent()
-			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, recursion)
+			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, recursion, reverse)
 			infoFiles = append(infoFiles, subUsageSizes...)
 			l.UnIndent()
 		}
