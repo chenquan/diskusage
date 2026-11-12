@@ -91,4 +91,5 @@ func init() {
 	rootCmd.Flags().BoolP("recursion", "r", false, "automatically calculate directory depth, for recursively traversing all sub directories")
 	rootCmd.Flags().BoolP("directory", "D", false, "only display directory")
 	rootCmd.Flags().BoolP("interactive", "i", false, "enable interactive")
+	rootCmd.Flags().BoolP("reverse", "R", false, "reverse the sort order, so the smallest files are listed first")
 }

@@ -147,6 +147,11 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	reverse, err := flags.GetBool("reverse")
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		defer close(errChan)
 
@@ -183,7 +188,7 @@ func Stat(cmd *cobra.Command, _ []string) error {
 		l.SetStyle(list.StyleConnectedLight)
 
 		markPrint(files, limit, all, directory)
-		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, recursion)
+		infoFiles := buildInfoFile(l, files, 0, depth, unit, totalSize, recursion, reverse)
 		maxLen := 0
 		for _, info := range infoFiles {
 			if maxLen < info.strLen {
@@ -327,13 +332,18 @@ func find(dir string, filter func(info fs.FileInfo) bool) ([]*file, error) {
 	return files, nil
 }
 
-func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, totalSize int64, recursion bool) []fileInfo {
+func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, totalSize int64, recursion, reverse bool) []fileInfo {
 	if n == depth && !recursion {
 		return nil
 	}
 
 	var infoFiles []fileInfo
-	for _, f := range files {
+	for i := range files {
+		f := files[i]
+		if reverse {
+			f = files[len(files)-1-i]
+		}
+
 		if !f.print {
 			continue
 		}
@@ -355,7 +365,7 @@ func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, to
 
 		if f.isDir {
 			l.Indent()
-			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, recursion)
+			subUsageSizes := buildInfoFile(l, f.sub, n+1, depth, unit, totalSize, recursion, reverse)
 			infoFiles = append(infoFiles, subUsageSizes...)
 			l.UnIndent()
 		}

@@ -56,6 +56,7 @@ Flags:
   -h, --help            help for diskusage
   -l, --limit int       limit the number of files and directories displayed (default 9223372036854775807)
   -r, --recursion       automatically calculate directory depth, for recursively traversing all sub directories
+  -R, --reverse         reverse the sort order, so the smallest files are listed first
   -t, --type strings    only count certain types of files  (default all)
   -u, --unit string     displayed units. optional: B(Bytes), K(KB), M(MB), G(GB), T(TB) (default "M")
   -v, --version         version for diskusage
