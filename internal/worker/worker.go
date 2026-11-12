@@ -48,9 +48,11 @@ func (w *Worker) Run(run func()) {
 	}
 }
 
+// Close makes subsequent Run calls execute inline. The atomic flag alone
+// gates Run; the channel must NOT be closed, as a concurrent Run may be
+// between the flag check and its send, and closing would panic.
 func (w *Worker) Close() {
 	w.closeOnce.Do(func() {
 		atomic.StoreUint32(&w.close, 1)
-		close(w.worker)
 	})
 }
