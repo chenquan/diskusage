@@ -66,4 +66,6 @@ Flags:
 2. 最大显示单位GB: `diskusage -u G`
 3. 支持颜色输出到管道: `diskusage -c always | less -R` or `diskusage -c always | more`
 
+硬链接只统计一次：大小保留在路径字典序最小的链接上，其余链接显示为 0。
+
 如果你喜欢或正在使用这个项目来学习或开始你的解决方案，请给它一个star⭐。谢谢！

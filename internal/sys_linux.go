@@ -34,3 +34,18 @@ func diskSize(info os.FileInfo, _ string) int64 {
 	}
 	return info.Size()
 }
+
+// hardLinkID reports the inode identity of a regular file with more than one
+// hard link. Other files need no deduplication and return ok == false.
+func hardLinkID(info os.FileInfo, _ string) (fileID, bool) {
+	if !info.Mode().IsRegular() {
+		return fileID{}, false
+	}
+
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok || stat.Nlink < 2 {
+		return fileID{}, false
+	}
+
+	return fileID{dev: uint64(stat.Dev), ino: uint64(stat.Ino)}, true
+}

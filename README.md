@@ -77,4 +77,6 @@ Flags:
 2. The maximum display unit is GB: `diskusage -u G`
 3. Supports color output to pipeline: `diskusage -c always | less -R` or `diskusage -c always | more`
 
+Hard links are counted once: the size stays on the lexicographically first path and duplicate links show as 0.
+
 If you like or are using this project to learn or start your solution, please give it a star⭐. Thanks!

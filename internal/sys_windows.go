@@ -56,3 +56,37 @@ func diskSize(info os.FileInfo, name string) int64 {
 
 	return int64(uint64(high)<<32 | uint64(uint32(low)))
 }
+
+// hardLinkID reports the identity of a regular file with more than one hard
+// link. Windows file info carries no link count, so each non-empty file is
+// opened to query its file ID.
+func hardLinkID(info os.FileInfo, name string) (fileID, bool) {
+	if !info.Mode().IsRegular() || info.Size() == 0 {
+		return fileID{}, false
+	}
+
+	p, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return fileID{}, false
+	}
+	h, err := syscall.CreateFile(p, 0,
+		syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE|syscall.FILE_SHARE_DELETE,
+		nil, syscall.OPEN_EXISTING, 0, 0)
+	if err != nil {
+		return fileID{}, false
+	}
+	defer syscall.CloseHandle(h)
+
+	var data syscall.ByHandleFileInformation
+	if err := syscall.GetFileInformationByHandle(h, &data); err != nil {
+		return fileID{}, false
+	}
+	if data.NumberOfLinks < 2 {
+		return fileID{}, false
+	}
+
+	return fileID{
+		dev: uint64(data.VolumeSerialNumber),
+		ino: uint64(data.FileIndexHigh)<<32 | uint64(data.FileIndexLow),
+	}, true
+}
