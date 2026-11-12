@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -113,6 +112,18 @@ type (
 		usageRate float64
 		uint      string
 		isDir     bool
+	}
+
+	// fileID identifies an inode within one filesystem.
+	fileID struct {
+		dev uint64
+		ino uint64
+	}
+
+	// hardLink is one directory entry of a hard link group.
+	hardLink struct {
+		node *file
+		path string
 	}
 )
 
@@ -448,10 +459,35 @@ func getDirectory(flags *flag.FlagSet) (bool, error) {
 	return directory, nil
 }
 
-// find walks dir recursively. Only a missing root directory is a hard error;
-// errors below the root are recorded via recordErr and the subtree is skipped.
-// sortFunc orders every level's entries.
+// scanner walks one directory tree, tracking hard links so every inode is
+// counted only once.
+type scanner struct {
+	filter func(info fs.FileInfo) bool
+	links  map[fileID][]*hardLink
+	mu     sync.Mutex
+}
+
+// find walks dir recursively, counts hard-linked files once and sorts every
+// level's entries. Only a missing root directory is a hard error; errors below
+// the root are recorded via recordErr and the subtree is skipped.
 func find(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*file, i, j int) bool) ([]*file, error) {
+	s := &scanner{
+		filter: filter,
+		links:  make(map[fileID][]*hardLink),
+	}
+
+	files, err := s.walk(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	s.dedupeHardLinks()
+	finalizeTree(files, sortFunc)
+
+	return files, nil
+}
+
+func (s *scanner) walk(dir string) ([]*file, error) {
 	if !sysFilter(dir) {
 		return nil, nil
 	}
@@ -477,16 +513,19 @@ func find(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*fil
 			continue
 		}
 
-		if !filter(fileInfo) {
+		if !s.filter(fileInfo) {
 			continue
 		}
 
+		name := filepath.Join(dir, entry.Name())
 		if !entry.IsDir() {
 			tickFile()
-			fileChan <- &file{
+			f := &file{
 				name: entry.Name(),
-				size: diskSize(fileInfo, filepath.Join(dir, entry.Name())),
+				size: diskSize(fileInfo, name),
 			}
+			s.trackHardLink(fileInfo, name, f)
+			fileChan <- f
 			continue
 		}
 
@@ -494,22 +533,16 @@ func find(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*fil
 		do := func() {
 			defer wg.Done()
 
-			subFiles, err := find(path.Join(dir, entry.Name()), filter, sortFunc)
+			subFiles, err := s.walk(name)
 			if err != nil {
-				recordErr(path.Join(dir, entry.Name()), err)
+				recordErr(name, err)
 				return
-			}
-
-			totalSize := int64(0)
-			for _, subFile := range subFiles {
-				totalSize += subFile.size
 			}
 
 			fileChan <- &file{
 				sub:   subFiles,
 				name:  entry.Name(),
 				isDir: true,
-				size:  totalSize,
 			}
 		}
 		w.Run(do)
@@ -521,9 +554,53 @@ func find(dir string, filter func(info fs.FileInfo) bool, sortFunc func(a []*fil
 	for f := range fileChan {
 		files = append(files, f)
 	}
-	sort.Slice(files, func(i, j int) bool { return sortFunc(files, i, j) })
 
 	return files, nil
+}
+
+// trackHardLink records node when info belongs to a hard link group.
+func (s *scanner) trackHardLink(info fs.FileInfo, name string, node *file) {
+	id, ok := hardLinkID(info, name)
+	if !ok {
+		return
+	}
+
+	s.mu.Lock()
+	s.links[id] = append(s.links[id], &hardLink{node: node, path: name})
+	s.mu.Unlock()
+}
+
+// dedupeHardLinks keeps the size on the lexicographically first path of each
+// hard link group and zeroes the others, so every inode is counted once.
+func (s *scanner) dedupeHardLinks() {
+	for _, group := range s.links {
+		if len(group) < 2 {
+			continue
+		}
+
+		sort.Slice(group, func(i, j int) bool {
+			return group[i].path < group[j].path
+		})
+		for _, link := range group[1:] {
+			link.node.size = 0
+		}
+	}
+}
+
+// finalizeTree recomputes directory sizes after deduplication and sorts every
+// level with sortFunc.
+func finalizeTree(files []*file, sortFunc func(a []*file, i, j int) bool) int64 {
+	totalSize := int64(0)
+	for _, f := range files {
+		if f.isDir {
+			f.size = finalizeTree(f.sub, sortFunc)
+		}
+		totalSize += f.size
+	}
+
+	sort.Slice(files, func(i, j int) bool { return sortFunc(files, i, j) })
+
+	return totalSize
 }
 
 func buildInfoFile(l list.Writer, files []*file, n, depth int64, unit string, totalSize int64, recursion, reverse bool) []fileInfo {
